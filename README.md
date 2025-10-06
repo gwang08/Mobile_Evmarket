@@ -1,321 +1,174 @@
-# 🚗 EV Market - Mobile App
+# Mobile EVMarket
 
-Ứng dụng di động cho thị trường xe điện và pin, được xây dựng bằng React Native với Expo.
+Ứng dụng di động (Expo React Native) cho thị trường mua bán xe và pin xe điện. Cung cấp trải nghiệm duyệt sản phẩm, xem chi tiết pin/xe, quản lý ví, thanh toán và hồ sơ người dùng.
 
-## 📱 Tính năng chính
+## 🚀 Công nghệ chính
 
-- 🏠 **Trang chủ**: Hiển thị sản phẩm nổi bật
-- 🔍 **Sản phẩm**: Duyệt xe điện và pin với tìm kiếm, lọc
-- 💰 **Ví điện tử**: Nạp tiền, xem số dư qua MoMo
-- 👤 **Hồ sơ**: Quản lý tài khoản, đăng nhập/đăng ký
-- 🛒 **Mua hàng**: Checkout có bảo vệ authentication
-- 📋 **Chi tiết**: Xem thông tin sản phẩm và người bán
+- **Expo** ~54
+- **React Native** 0.81 & React 19
+- **TypeScript**
+- **React Navigation** (Bottom Tabs + Stack)
+- **Axios** (API client có interceptor token)
+- **AsyncStorage** (lưu token & user)
+- **Vector Icons** (@expo/vector-icons / react-native-vector-icons)
 
-## 🛠 Tech Stack
-Ứng dụng di động cho thị trường xe điện và pin, được xây dựng bằng React Native với Expo.
-
-- **Framework**: React Native với Expo (~54.0.12)
-
-
-
-├── 
-
-├── 🗂 components/               # Reusable components
-│   ├── ProductCard.tsx          # Card hiển thị sản phẩm
-│   ├── SearchBar.tsx            # Thanh tìm kiếm
-│   └── ...
-│
-├── 🖥 screens/                  # Màn hình chính
-│   ├── HomeScreen.tsx           # Trang chủ
-│   ├── ProductsScreen.tsx       # Danh sách sản phẩm
-│   ├── WalletScreen.tsx         # Ví điện tử
-│   ├── ProfileScreen.tsx        # Hồ sơ người dùng
-│   ├── VehicleDetailScreen.tsx  # Chi tiết xe điện
-│   ├── BatteryDetailScreen.tsx  # Chi tiết pin
-│   ├── SellerDetailScreen.tsx   # Thông tin người bán
-│   ├── CheckoutScreen.tsx       # Thanh toán
-│   ├── LoginScreen.tsx          # Đăng nhập
-│   └── RegisterScreen.tsx       # Đăng ký
-│
-├── 🧭 navigation/               # Điều hướng
-│   ├── RootNavigator.tsx        # Stack Navigator chính
-│   └── TabNavigator.tsx         # Bottom Tab Navigator
-│
-├── 🌐 services/                 # API services
-│   ├── vehicleService.ts        # API xe điện
-│   ├── batteryService.ts        # API pin
-│   ├── userService.ts           # API người dùng
-│   └── walletService.ts         # API ví điện tử
-│
-├── ⚙️ config/                   # Cấu hình
-│   └── api.ts                   # Axios client setup
-│
-├── 🎨 contexts/                 # React Context
-│   └── AuthContext.tsx          # Authentication state
-│
-├── 🏷 types/                    # TypeScript definitions
-│   └── index.ts                 # Tất cả types/interfaces
-│
-└── 🖼 assets/                   # Hình ảnh, icons
-    ├── icon.png
-    ├── splash-icon.png
-    └── ...
-```
-
-## 🚀 Getting Started
-
-### Prerequisites
-
-- Node.js (v16 hoặc cao hơn)
-- npm hoặc yarn
-- Expo CLI: `npm install -g @expo/cli`
-- Android Studio (cho Android) hoặc Xcode (cho iOS)
-
-### Installation
-
-1. **Clone repository**
-
-   ```bash
-   git clone https://github.com/gwang08/Mobile_Evmarket.git
-   cd Mobile_Evmarket
-   ```
-
-2. **Install dependencies**
-
-   ```bash
-   npm install
-   ```
-
-3. **Setup environment variables**
-
-   ```bash
-   # Tạo file .env từ template
-   cp .env.example .env
-
-   # Cập nhật các giá trị trong .env
-   nano .env
-   ```
-
-4. **Start development server**
-
-   ```bash
-   # Start Expo development server
-   npx expo start
-
-   # Hoặc với tunnel để test trên device thật
-   npx expo start --tunnel
-   ```
-
-5. **Run on device**
-
-   - **Android**: Scan QR code bằng Expo Go app
-   - **iOS**: Scan QR code bằng Camera app
-   - **Simulator**: Nhấn `a` (Android) hoặc `i` (iOS) trong terminal
-
-## 🔧 Environment Variables
-
-Tạo file `.env` với các biến sau:
-
-```env
-# API Configuration
-API_BASE_URL=https://evmarket-api-staging.onrender.com/api/v1
-
-# App Configuration
-APP_ENV=development
-APP_VERSION=1.0.0
-```
-
-## 🗂 Chi tiết Architecture
-
-### Navigation Structure
+## 📂 Cấu trúc thư mục
 
 ```text
-RootStackNavigator
-├── MainTabNavigator (headerShown: false)
-│   ├── Home Tab (Trang chủ)
-│   ├── Products Tab (Sản phẩm)
-│   ├── Wallet Tab (Ví)
-│   └── Profile Tab (Hồ sơ)
-├── VehicleDetail (Chi tiết xe)
-├── BatteryDetail (Chi tiết pin)
-├── SellerDetail (Thông tin người bán)
-└── Checkout (Thanh toán)
+.
+├── App.tsx                  # Điểm vào ứng dụng
+├── app.json                 # Cấu hình Expo
+├── index.js                 # Đăng ký root
+├── tsconfig.json            # Cấu hình TypeScript
+├── package.json             # Scripts & dependencies
+├── assets/                  # Icon, splash, favicon
+├── components/              # UI components tái sử dụng
+├── config/api.ts            # Cấu hình axios + interceptors
+├── contexts/AuthContext.tsx # Quản lý auth, token, user state
+├── navigation/              # Điều hướng Root & Tabs
+├── screens/                 # Các màn hình chính (Home, Login, Detail,...)
+├── services/                # Gọi API (battery, vehicle, user, wallet)
+└── types/                   # Khai báo types dùng chung
 ```
 
-### API Integration
+## ✨ Tính năng hiện có
 
-**Base URL**: `https://evmarket-api-staging.onrender.com/api/v1`
+- Đăng ký / Đăng nhập (lưu token, tự logout khi 401)
+- Duyệt danh sách xe & pin
+- Xem chi tiết: xe, pin, người bán
+- Thêm thanh toán / Checkout cơ bản
+- Quản lý ví (Wallet)
+- Hồ sơ người dùng (Profile)
+- Interceptor tự động đính kèm Bearer token & xử lý hết hạn
 
-**Authentication**: JWT Token trong AsyncStorage
+## 🧩 Kiến trúc & Nguyên tắc
 
-**Key Endpoints**:
+- Tầng `services/` tách biệt gọi API → dễ test & thay đổi endpoint
+- `AuthContext` giữ trạng thái toàn cục (user + token) & đồng bộ AsyncStorage
+- Components nhỏ, chuyên biệt → tái sử dụng ở nhiều screen
+- Điều hướng phân lớp: RootNavigator (Stack) + TabNavigator (Bottom Tabs)
 
-- `GET /vehicles/` - Danh sách xe điện
-- `GET /batteries/` - Danh sách pin
-- `GET /wallet/` - Thông tin ví
-- `POST /wallet/deposit` - Nạp tiền
-- `POST /auth/login` - Đăng nhập
-- `POST /auth/register` - Đăng ký
+## 🔐 Xử lý xác thực
 
-### State Management
+- Token lưu trong `AsyncStorage` dưới key `accessToken`
+- Interceptor thêm header `Authorization: Bearer <token>` nếu có
+- Khi API trả 401 → xoá token + user → Context nhận biết và chuyển hướng đăng nhập
 
-**AuthContext**: Quản lý trạng thái đăng nhập
+## 🌐 API
 
-```typescript
-interface AuthContextType {
-  user: User | null;
-  isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (userData: RegisterData) => Promise<void>;
-  logout: () => Promise<void>;
-  showLoginPrompt: boolean;
-  setShowLoginPrompt: (show: boolean) => void;
-}
+Hiện tại base URL được hardcode trong `config/api.ts`:
+
+```text
+https://evmarket-api-staging.onrender.com/api/v1
 ```
 
-### TypeScript Types
+Bạn có thể chuyển sang dùng biến môi trường bằng cách:
 
-**Core Types**:
+1. Cài thư viện: `expo install expo-constants` (nếu cần) hoặc dùng `react-native-dotenv`
+2. Tạo file `.env`:
 
-- `User` - Thông tin người dùng
-- `Vehicle` - Thông tin xe điện
-- `Battery` - Thông tin pin
-- `Wallet` - Thông tin ví
-- `Seller` - Thông tin người bán
+```env
+API_BASE_URL=https://evmarket-api-staging.onrender.com/api/v1
+```
 
-## 🎨 UI/UX Guidelines
+3. Điều chỉnh `config/api.ts` để đọc từ env.
 
-### Color Scheme
+## 🛠 Yêu cầu hệ thống
 
-- **Primary**: `#3498db` (Blue)
-- **Success**: `#27ae60` (Green)
-- **Danger**: `#e74c3c` (Red)
-- **Dark**: `#2c3e50`
-- **Light**: `#ecf0f1`
+- Node.js ≥ 18
+- Expo CLI (nên dùng expo trong npx) / Expo Go app trên thiết bị
+- Yarn hoặc npm (tuỳ chọn)
 
-### Design Principles
-
-- **Cards**: Rounded corners (12-16px), subtle shadows
-- **Buttons**: Consistent padding (12-16px), clear CTAs
-- **Typography**: Clear hierarchy, readable sizes
-- **Spacing**: Consistent margins (8, 12, 16, 20px)
-
-## 🔐 Authentication Flow
-
-1. **Guest User**: Có thể xem sản phẩm, không thể checkout
-2. **Login Required**: Checkout, Wallet, Profile editing
-3. **Token Management**: Auto-refresh, 401 handling
-4. **Persistent Session**: AsyncStorage lưu token
-
-## 💳 Payment Integration
-
-**MoMo Integration**:
-
-- Tạo deposit request qua API
-- Nhận payUrl từ response
-- Mở MoMo app bằng `Linking.openURL()`
-- User hoàn tất thanh toán trong MoMo
-- Quay lại app, refresh để xem số dư mới
-
-## 🧪 Testing
+## 📦 Cài đặt
 
 ```bash
-# Run tests (nếu có)
-npm test
-
-# TypeScript type checking
-npx tsc --noEmit
-
-# Linting
-npx eslint . --ext .ts,.tsx
+# Cài dependencies
+npm install
+# hoặc
+yarn
 ```
 
-## 📦 Build & Deploy
-
-### Development Build
+npm start
+npm run ios
+## ▶️ Chạy ứng dụng
 
 ```bash
-npx expo build:android --type development
-npx expo build:ios --type development
+# Khởi động dev server (QR)
+npm start
+
+# Mở Android emulator / thiết bị
+npm run android
+
+# Mở iOS simulator (macOS)
+npm run ios
+
+# Chạy trên web
+npm run web
 ```
 
-### Production Build
+## 🧪 Kiểm thử
 
-```bash
-# Android APK
-npx expo build:android --type app-bundle
+(Hiện chưa cấu hình test). Gợi ý:
 
-# iOS IPA
-npx expo build:ios
-```
+- Thêm Jest + React Native Testing Library
+- Test services (mock axios) & components quan trọng
 
-### EAS Build (Recommended)
-
-```bash
-# Setup EAS
-npm install -g @expo/eas-cli
 eas login
+## 📤 Build & Phát hành (Gợi ý)
 
-# Build
-eas build --platform android
-eas build --platform ios
-```
-
-## 🐛 Common Issues & Solutions
-
-### 1. Metro bundler issues
+Sử dụng EAS:
 
 ```bash
-npx expo start --clear
+npm install -g eas-cli
+eas login
+EAS_PROJECT_ID=... eas build -p android --profile preview
 ```
 
-### 2. Navigation type errors
+(Chưa tích hợp trong repo — cần thêm `eas.json`).
 
-Đảm bảo types trong `navigation/` khớp với screen names
+## 🔄 Mở rộng đề xuất
 
-### 3. API 500 errors
+- Thêm bộ nhớ cache offline (react-query / tanstack query)
+- State management nâng cao (Zustand / Redux Toolkit) nếu phức tạp hơn
+- Đa ngôn ngữ (i18n)
+- Dark mode
+- Thêm phân trang & skeleton loading
+- Thử CI (GitHub Actions) lint + test + build
 
-Kiểm tra backend server status và authentication token
+## 🐞 Gỡ lỗi nhanh
 
-### 4. AsyncStorage issues
+| Vấn đề | Nguyên nhân thường gặp | Cách xử lý |
+|--------|------------------------|------------|
+| 401 liên tục | Token hết hạn hoặc bị xoá | Đăng nhập lại, kiểm tra interceptor |
+| Không fetch được API | Sai baseURL / mạng | Kiểm tra `config/api.ts`, thử curl |
+| App không chạy trên thiết bị | Chưa cài Expo Go / cùng mạng | Mở Expo Go, scan QR, kiểm tra firewall |
 
-```bash
-npx expo install @react-native-async-storage/async-storage
-```
+## 📚 Scripts
 
-## 🤝 Contributing
+| Script | Mục đích |
+|--------|---------|
+| `npm start` | Khởi động Expo Dev Tools |
+| `npm run android` | Mở trên Android |
+| `npm run ios` | Mở trên iOS (macOS) |
+| `npm run web` | Chạy bản web |
 
-### Git Workflow
+## 📄 License
 
-1. **Branch naming**: `feature/ten-tinh-nang` hoặc `fix/ten-bug`
-2. **Commit messages**: Tiếng Việt hoặc tiếng Anh, mô tả rõ ràng
-3. **Pull Requests**: Code review trước khi merge
+(Thêm nội dung giấy phép nếu cần, ví dụ MIT).
 
-### Code Standards
+## 🤝 Đóng góp
 
-- **TypeScript**: Strict typing, interface definitions
-- **ESLint**: Follow configured rules
-- **Prettier**: Auto-formatting
-- **Naming**: camelCase cho functions, PascalCase cho components
+1. Fork repo
+2. Tạo nhánh mới: `feat/tinh-nang-x`
+3. Commit rõ ràng: `feat: thêm màn hình ví`
+4. Tạo Pull Request
 
-## 📚 Learning Resources
+## 🗺 Roadmap ngắn hạn (gợi ý)
 
-- [React Native Docs](https://reactnative.dev/docs/getting-started)
-- [Expo Docs](https://docs.expo.dev/)
-- [React Navigation](https://reactnavigation.org/docs/getting-started)
-- [TypeScript Handbook](https://www.typescriptlang.org/docs/)
-
-## 📞 Support
-
-- **Technical Issues**: Tạo issue trên GitHub
-- **Questions**: Discussion section hoặc team chat
-- **Documentation**: Cập nhật README khi có thay đổi
+- [ ] Thêm màn hình lịch sử giao dịch ví
+- [ ] Thêm bộ lọc nâng cao cho sản phẩm
+- [ ] Tối ưu bundle & lazy loading màn hình chi tiết
+- [ ] Thêm unit test cho services
 
 ---
-
-### Happy Coding! 🚀
-
-> Được tạo với ❤️ bởi EV Market Team
- 
-
- 
+Nếu cần bổ sung thêm mục (ví dụ ERD, sequence diagram, performance), hãy cho tôi biết để cập nhật tiếp.
