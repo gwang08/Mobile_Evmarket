@@ -12,23 +12,14 @@
 - 📋 **Chi tiết**: Xem thông tin sản phẩm và người bán
 
 ## 🛠 Tech Stack
+Ứng dụng di động cho thị trường xe điện và pin, được xây dựng bằng React Native với Expo.
 
 - **Framework**: React Native với Expo (~54.0.12)
-- **Language**: TypeScript
-- **Navigation**: React Navigation v6 (Stack + Bottom Tabs)
-- **HTTP Client**: Axios với interceptors
-- **State Management**: React Context
-- **Storage**: AsyncStorage
-- **UI**: React Native components + Expo Vector Icons
 
-## 📁 Cấu trúc dự án
 
-```text
-Mobile_Evmarket/
-├── 📱 App.js                    # Entry point
-├── 🎯 app.json                  # Expo configuration
-├── 📦 package.json              # Dependencies
+
 ├── 
+
 ├── 🗂 components/               # Reusable components
 │   ├── ProductCard.tsx          # Card hiển thị sản phẩm
 │   ├── SearchBar.tsx            # Thanh tìm kiếm
