@@ -5,6 +5,9 @@ import VehicleDetailScreen from '../screens/VehicleDetailScreen';
 import BatteryDetailScreen from '../screens/BatteryDetailScreen';
 import SellerDetailScreen from '../screens/SellerDetailScreen';
 import CheckoutScreen from '../screens/CheckoutScreen';
+import CreateVehicleScreen from '../screens/CreateVehicleScreen';
+import CreateBatteryScreen from '../screens/CreateBatteryScreen';
+import MyListingsScreen from '../screens/MyListingsScreen';
 
 export type RootStackParamList = {
   Main: { screen?: keyof TabParamList } | undefined;
@@ -12,20 +15,19 @@ export type RootStackParamList = {
   BatteryDetail: { batteryId: string };
   SellerDetail: { sellerId: string };
   Checkout: { productId: string; productType: 'vehicle' | 'battery' };
+  CreateVehicle: undefined;
+  CreateBattery: undefined;
+  MyListings: undefined;
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
 
 // Wrapper component for TabNavigator to handle initial route
 function MainTabNavigator({ route, navigation }: { route: any; navigation: any }) {
-  const initialRouteName = route.params?.screen;
-  
-  React.useEffect(() => {
-    if (initialRouteName) {
-      navigation.navigate(initialRouteName);
-    }
-  }, [initialRouteName, navigation]);
-  
+  const initialRouteName = route.params?.screen as any | undefined;
+
+  // Pass initialRouteName to TabNavigator. TabNavigator will decide
+  // whether to render the requested tab (e.g. Wallet) based on auth state.
   return <TabNavigator initialRouteName={initialRouteName} />;
 }
 
@@ -86,6 +88,27 @@ export default function RootNavigator() {
         component={CheckoutScreen}
         options={{ 
           title: 'Thanh toán',
+        }}
+      />
+      <Stack.Screen 
+        name="CreateVehicle" 
+        component={CreateVehicleScreen}
+        options={{ 
+          title: 'Đăng bán xe',
+        }}
+      />
+      <Stack.Screen 
+        name="CreateBattery" 
+        component={CreateBatteryScreen}
+        options={{ 
+          title: 'Đăng bán pin',
+        }}
+      />
+      <Stack.Screen 
+        name="MyListings" 
+        component={MyListingsScreen}
+        options={{ 
+          title: 'Sản phẩm của tôi',
         }}
       />
     </Stack.Navigator>

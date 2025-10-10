@@ -44,6 +44,24 @@ export default function BatteryDetailScreen() {
     }
   };
 
+  const handleLoginRequired = () => {
+    Alert.alert(
+      'Yêu cầu đăng nhập',
+      'Bạn cần đăng nhập để thực hiện hành động này. Vui lòng đăng nhập để tiếp tục.',
+      [
+        { text: 'Hủy', style: 'cancel' },
+        { 
+          text: 'Đăng nhập', 
+          onPress: () => {
+            // Navigate to Profile tab and show login
+            navigation.navigate('Main', { screen: 'Profile' });
+            setShowLoginPrompt(true);
+          }
+        }
+      ]
+    );
+  };
+
   const handleSellerPress = () => {
     if (battery?.seller) {
       navigation.navigate('SellerDetail', { sellerId: battery.seller.id });
@@ -60,10 +78,9 @@ export default function BatteryDetailScreen() {
           { 
             text: 'Đăng nhập', 
             onPress: () => {
-              navigation.goBack();
-              setTimeout(() => {
-                setShowLoginPrompt(true);
-              }, 200);
+              // Navigate to Profile tab and show login
+              navigation.navigate('Main', { screen: 'Profile' });
+              setShowLoginPrompt(true);
             }
           }
         ]
@@ -87,10 +104,9 @@ export default function BatteryDetailScreen() {
           { 
             text: 'Đăng nhập', 
             onPress: () => {
-              navigation.goBack();
-              setTimeout(() => {
-                setShowLoginPrompt(true);
-              }, 200);
+              // Navigate to Profile tab and show login
+              navigation.navigate('Main', { screen: 'Profile' });
+              setShowLoginPrompt(true);
             }
           }
         ]
@@ -186,6 +202,7 @@ export default function BatteryDetailScreen() {
         productType="battery"
         onBuyPress={handleBuyPress}
         onNegotiatePress={handleNegotiatePress}
+        onLoginRequired={handleLoginRequired}
       />
     </SafeAreaView>
   );

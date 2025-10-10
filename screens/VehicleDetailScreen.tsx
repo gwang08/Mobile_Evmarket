@@ -44,6 +44,24 @@ export default function VehicleDetailScreen() {
     }
   };
 
+  const handleLoginRequired = () => {
+    Alert.alert(
+      'Yêu cầu đăng nhập',
+      'Bạn cần đăng nhập để thực hiện hành động này. Vui lòng đăng nhập để tiếp tục.',
+      [
+        { text: 'Hủy', style: 'cancel' },
+        { 
+          text: 'Đăng nhập', 
+          onPress: () => {
+            // Navigate to Profile tab and show login
+            navigation.navigate('Main', { screen: 'Profile' });
+            setShowLoginPrompt(true);
+          }
+        }
+      ]
+    );
+  };
+
   const handleSellerPress = () => {
     if (vehicle?.seller) {
       navigation.navigate('SellerDetail', { sellerId: vehicle.seller.id });
@@ -60,11 +78,9 @@ export default function VehicleDetailScreen() {
           { 
             text: 'Đăng nhập', 
             onPress: () => {
-              // Go back to main first, then set flag
-              navigation.goBack();
-              setTimeout(() => {
-                setShowLoginPrompt(true);
-              }, 200);
+              // Navigate to Profile tab and show login
+              navigation.navigate('Main', { screen: 'Profile' });
+              setShowLoginPrompt(true);
             }
           }
         ]
@@ -88,10 +104,9 @@ export default function VehicleDetailScreen() {
           { 
             text: 'Đăng nhập', 
             onPress: () => {
-              navigation.goBack();
-              setTimeout(() => {
-                setShowLoginPrompt(true);
-              }, 200);
+              // Navigate to Profile tab and show login
+              navigation.navigate('Main', { screen: 'Profile' });
+              setShowLoginPrompt(true);
             }
           }
         ]
@@ -171,6 +186,7 @@ export default function VehicleDetailScreen() {
         productType="vehicle"
         onBuyPress={handleBuyPress}
         onNegotiatePress={handleNegotiatePress}
+        onLoginRequired={handleLoginRequired}
       />
     </SafeAreaView>
   );

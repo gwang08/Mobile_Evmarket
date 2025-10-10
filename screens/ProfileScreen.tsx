@@ -10,41 +10,38 @@ import {
   ActivityIndicator 
 } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useNavigation, useFocusEffect, CompositeNavigationProp } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import { RootStackParamList } from '../navigation/RootNavigator';
+import { TabParamList } from '../navigation/TabNavigator';
 import LoginScreen from './LoginScreen';
 import RegisterScreen from './RegisterScreen';
+
+type ProfileNavigationProp = CompositeNavigationProp<
+  BottomTabNavigationProp<TabParamList, 'Profile'>,
+  StackNavigationProp<RootStackParamList>
+>;
 
 export default function ProfileScreen() {
   const { user, isLoading, isAuthenticated, logout, showLoginPrompt, setShowLoginPrompt } = useAuth();
   const [showLogin, setShowLogin] = useState(true);
-  const navigation = useNavigation();
+  const navigation = useNavigation<ProfileNavigationProp>();
 
-  // Effect to handle login prompt from other screens
   useEffect(() => {
     if (showLoginPrompt && !isAuthenticated) {
       setShowLoginPrompt(false);
       setShowLogin(true);
-      // Try to navigate to Profile tab
-      try {
-        navigation.navigate('Profile' as never);
-      } catch (error) {
-        console.log('Navigation error:', error);
-      }
     }
-  }, [showLoginPrompt, isAuthenticated, setShowLoginPrompt, navigation]);
+  }, [showLoginPrompt, isAuthenticated, setShowLoginPrompt]);
 
-  // Auto-focus Profile tab when showLoginPrompt is true
   useFocusEffect(
     React.useCallback(() => {
       if (showLoginPrompt && !isAuthenticated) {
-        // Reset the flag
         setShowLoginPrompt(false);
-        // Force show login form
         setShowLogin(true);
-        // Navigate to Profile tab
-        navigation.getParent()?.navigate('Profile');
       }
-    }, [showLoginPrompt, isAuthenticated, setShowLoginPrompt, navigation])
+    }, [showLoginPrompt, isAuthenticated, setShowLoginPrompt])
   );
 
   const handleLogout = () => {
@@ -63,8 +60,8 @@ export default function ProfileScreen() {
   };
 
   const menuItems = [
-    { id: 1, title: 'Lịch sử đơn hàng', icon: '📋' },
-    { id: 2, title: 'Sản phẩm đã bán', icon: '🏪' },
+    { id: 1, title: 'Sản phẩm của tôi', icon: '🏪', action: () => navigation.navigate('MyListings') },
+    { id: 2, title: 'Lịch sử đơn hàng', icon: '📋' },
     { id: 3, title: 'Yêu thích', icon: '❤️' },
     { id: 4, title: 'Cài đặt thanh toán', icon: '💳' },
     { id: 5, title: 'Hỗ trợ khách hàng', icon: '🎧' },
@@ -97,7 +94,6 @@ export default function ProfileScreen() {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.content}>
-        {/* User Profile Header */}
         <View style={styles.profileHeader}>
           <View style={styles.avatarContainer}>
             {user?.avatar ? (
@@ -131,7 +127,6 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* Stats Section */}
         <View style={styles.statsSection}>
           <View style={styles.statItem}>
             <Text style={styles.statNumber}>0</Text>
@@ -147,10 +142,13 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* Menu Items */}
         <View style={styles.menuSection}>
           {menuItems.map((item) => (
-            <TouchableOpacity key={item.id} style={styles.menuItem}>
+            <TouchableOpacity 
+              key={item.id} 
+              style={styles.menuItem}
+              onPress={item.action || (() => Alert.alert('Thông báo', 'Chức năng đang phát triển'))}
+            >
               <Text style={styles.menuIcon}>{item.icon}</Text>
               <Text style={styles.menuTitle}>{item.title}</Text>
               <Text style={styles.menuArrow}>›</Text>
@@ -158,12 +156,10 @@ export default function ProfileScreen() {
           ))}
         </View>
 
-        {/* Logout Button */}
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
           <Text style={styles.logoutButtonText}>🚪 Đăng xuất</Text>
         </TouchableOpacity>
 
-        {/* App Info */}
         <View style={styles.appInfo}>
           <Text style={styles.appVersion}>Phiên bản 1.0.0</Text>
         </View>

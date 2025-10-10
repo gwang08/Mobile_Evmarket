@@ -8,6 +8,7 @@ interface ActionButtonsProps {
   productType?: 'vehicle' | 'battery';
   onBuyPress?: () => void;
   onNegotiatePress?: () => void;
+  onLoginRequired?: () => void; // Callback when login is required
 }
 
 export default function ActionButtons({ 
@@ -15,7 +16,8 @@ export default function ActionButtons({
   productId, 
   productType, 
   onBuyPress, 
-  onNegotiatePress 
+  onNegotiatePress,
+  onLoginRequired
 }: ActionButtonsProps) {
   const { isAuthenticated } = useAuth();
   
@@ -28,20 +30,24 @@ export default function ActionButtons({
 
   const handleBuyPress = () => {
     if (!isAuthenticated) {
-      Alert.alert(
-        'Yêu cầu đăng nhập',
-        'Bạn cần đăng nhập để mua sản phẩm này. Vui lòng đăng nhập để tiếp tục.',
-        [
-          { text: 'Hủy', style: 'cancel' },
-          { 
-            text: 'Đăng nhập', 
-            onPress: () => {
-              // Chuyển đến tab Profile để đăng nhập
-              // Navigation sẽ được xử lý từ parent component
+      if (onLoginRequired) {
+        onLoginRequired();
+      } else {
+        Alert.alert(
+          'Yêu cầu đăng nhập',
+          'Bạn cần đăng nhập để mua sản phẩm này. Vui lòng đăng nhập để tiếp tục.',
+          [
+            { text: 'Hủy', style: 'cancel' },
+            { 
+              text: 'Đăng nhập', 
+              onPress: () => {
+                // Chuyển đến tab Profile để đăng nhập
+                // Navigation sẽ được xử lý từ parent component
+              }
             }
-          }
-        ]
-      );
+          ]
+        );
+      }
       return;
     }
 
@@ -54,19 +60,23 @@ export default function ActionButtons({
 
   const handleNegotiatePress = () => {
     if (!isAuthenticated) {
-      Alert.alert(
-        'Yêu cầu đăng nhập',
-        'Bạn cần đăng nhập để thương lượng với người bán. Vui lòng đăng nhập để tiếp tục.',
-        [
-          { text: 'Hủy', style: 'cancel' },
-          { 
-            text: 'Đăng nhập', 
-            onPress: () => {
-              // Chuyển đến tab Profile để đăng nhập
+      if (onLoginRequired) {
+        onLoginRequired();
+      } else {
+        Alert.alert(
+          'Yêu cầu đăng nhập',
+          'Bạn cần đăng nhập để thương lượng với người bán. Vui lòng đăng nhập để tiếp tục.',
+          [
+            { text: 'Hủy', style: 'cancel' },
+            { 
+              text: 'Đăng nhập', 
+              onPress: () => {
+                // Chuyển đến tab Profile để đăng nhập
+              }
             }
-          }
-        ]
-      );
+          ]
+        );
+      }
       return;
     }
 

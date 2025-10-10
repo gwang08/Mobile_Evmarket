@@ -190,3 +190,27 @@ export interface DepositResponse {
     deeplinkMiniApp: string;
   };
 }
+
+export interface WalletTransaction {
+  id: string;
+  walletId: string;
+  type: 'DEPOSIT' | 'WITHDRAW' | 'PAYMENT' | 'REFUND';
+  amount: number;
+  status: 'PENDING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
+  gateway?: string;
+  gatewayTransId?: string;
+  description: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WalletHistoryResponse {
+  message: string;
+  data: {
+    transactions: WalletTransaction[];
+    page: number;
+    limit: number;
+    totalPages: number;
+    totalResults: number;
+  };
+}

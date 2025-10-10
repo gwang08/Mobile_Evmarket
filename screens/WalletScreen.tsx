@@ -10,14 +10,18 @@ import {
   TextInput,
   Linking,
   RefreshControl,
+  AppState,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { walletService } from '../services/walletService';
-import { Wallet } from '../types';
+import { Wallet, WalletTransaction } from '../types';
 
 const WalletScreen: React.FC = () => {
   const [wallet, setWallet] = useState<Wallet | null>(null);
+  const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingHistory, setLoadingHistory] = useState(false);
   const [depositing, setDepositing] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [depositAmount, setDepositAmount] = useState('');
@@ -30,11 +34,37 @@ const WalletScreen: React.FC = () => {
     loadWallet();
   }, []);
 
+  // Reload wallet when screen comes into focus (after returning from payment)
+  useFocusEffect(
+    React.useCallback(() => {
+      loadWallet();
+    }, [])
+  );
+
+  // Reload wallet when app becomes active (after returning from MoMo app)
+  useEffect(() => {
+    const handleAppStateChange = (nextAppState: string) => {
+      if (nextAppState === 'active') {
+        // Delay reload to ensure payment is processed
+        setTimeout(() => {
+          loadWallet();
+        }, 2000);
+      }
+    };
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    return () => subscription?.remove();
+  }, []);
+
   const loadWallet = async () => {
     try {
       setLoading(true);
-      const response = await walletService.getWalletBalance();
-      setWallet(response.data);
+      const [walletResponse, historyResponse] = await Promise.all([
+        walletService.getWalletBalance(),
+        walletService.getWalletHistory(1, 10)
+      ]);
+      setWallet(walletResponse.data);
+      setTransactions(historyResponse.data.transactions);
     } catch (error) {
       console.error('Error loading wallet:', error);
       Alert.alert('Lỗi', 'Không thể tải thông tin ví');
@@ -72,25 +102,37 @@ const WalletScreen: React.FC = () => {
     try {
       setDepositing(true);
       const response = await walletService.depositToWallet(amount);
-      
-      Alert.alert(
-        'Xác nhận thanh toán',
-        `Bạn sẽ được chuyển đến trang thanh toán MoMo để nạp ${formatCurrency(amount)}`,
-        [
-          {
-            text: 'Hủy',
-            style: 'cancel',
-          },
-          {
-            text: 'Tiếp tục',
-            onPress: () => {
-              Linking.openURL(response.data.payUrl);
-              setShowDepositForm(false);
-              setDepositAmount('');
-            },
-          },
-        ]
-      );
+
+      const { payUrl, deeplink, deeplinkMiniApp, qrCodeUrl } = response.data || {};
+
+      // Prefer app deeplink -> miniapp deeplink -> qrCode -> web payUrl
+      const tryUrls = [deeplink, deeplinkMiniApp, qrCodeUrl, payUrl].filter(Boolean) as string[];
+      let opened = false;
+
+      for (const url of tryUrls) {
+        try {
+          const supported = await Linking.canOpenURL(url);
+          if (supported) {
+            await Linking.openURL(url);
+            opened = true;
+            break;
+          }
+        } catch (e) {
+          console.warn('Failed to open URL', url, e);
+        }
+      }
+
+      if (!opened && payUrl) {
+        // last resort: try to open payUrl directly
+        try {
+          await Linking.openURL(payUrl);
+        } catch (e) {
+          Alert.alert('Lỗi', 'Không thể mở trang thanh toán. Vui lòng thử lại sau.');
+        }
+      }
+
+      setShowDepositForm(false);
+      setDepositAmount('');
     } catch (error) {
       console.error('Error creating deposit:', error);
       Alert.alert('Lỗi', 'Không thể tạo yêu cầu nạp tiền');
@@ -101,6 +143,53 @@ const WalletScreen: React.FC = () => {
 
   const selectSuggestedAmount = (amount: number) => {
     setDepositAmount(amount.toString());
+  };
+
+  const getTransactionIcon = (type: string) => {
+    switch (type) {
+      case 'DEPOSIT':
+        return 'add-circle';
+      case 'WITHDRAW':
+        return 'remove-circle';
+      case 'PAYMENT':
+        return 'card';
+      case 'REFUND':
+        return 'return-up-back';
+      default:
+        return 'swap-horizontal';
+    }
+  };
+
+  const getTransactionColor = (type: string) => {
+    switch (type) {
+      case 'DEPOSIT':
+      case 'REFUND':
+        return '#27ae60';
+      case 'WITHDRAW':
+      case 'PAYMENT':
+        return '#e74c3c';
+      default:
+        return '#7f8c8d';
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'COMPLETED':
+        return '#27ae60';
+      case 'PENDING':
+        return '#f39c12';
+      case 'FAILED':
+      case 'CANCELLED':
+        return '#e74c3c';
+      default:
+        return '#7f8c8d';
+    }
+  };
+
+  const formatTransactionAmount = (type: string, amount: number) => {
+    const formattedAmount = formatCurrency(amount);
+    return type === 'DEPOSIT' || type === 'REFUND' ? `+${formattedAmount}` : `-${formattedAmount}`;
   };
 
   if (loading) {
@@ -224,6 +313,61 @@ const WalletScreen: React.FC = () => {
           </TouchableOpacity>
         </View>
       )}
+
+      {/* Lịch sử giao dịch */}
+      <View style={styles.historyCard}>
+        <Text style={styles.historyTitle}>Lịch sử giao dịch</Text>
+        
+        {transactions.length === 0 ? (
+          <View style={styles.emptyHistory}>
+            <Ionicons name="receipt-outline" size={48} color="#bdc3c7" />
+            <Text style={styles.emptyHistoryText}>Chưa có giao dịch nào</Text>
+          </View>
+        ) : (
+          transactions.map((transaction) => (
+            <View key={transaction.id} style={styles.transactionItem}>
+              <View style={styles.transactionLeft}>
+                <View style={[styles.transactionIcon, { backgroundColor: getTransactionColor(transaction.type) + '20' }]}>
+                  <Ionicons 
+                    name={getTransactionIcon(transaction.type)} 
+                    size={20} 
+                    color={getTransactionColor(transaction.type)} 
+                  />
+                </View>
+                <View style={styles.transactionInfo}>
+                  <Text style={styles.transactionDescription} numberOfLines={2}>
+                    {transaction.description}
+                  </Text>
+                  <Text style={styles.transactionDate}>
+                    {new Date(transaction.createdAt).toLocaleDateString('vi-VN', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </Text>
+                  {transaction.gateway && (
+                    <Text style={styles.transactionGateway}>
+                      {transaction.gateway}
+                    </Text>
+                  )}
+                </View>
+              </View>
+              <View style={styles.transactionRight}>
+                <Text style={[styles.transactionAmount, { color: getTransactionColor(transaction.type) }]}>
+                  {formatTransactionAmount(transaction.type, transaction.amount)}
+                </Text>
+                <Text style={[styles.transactionStatus, { color: getStatusColor(transaction.status) }]}>
+                  {transaction.status === 'COMPLETED' ? 'Hoàn thành' :
+                   transaction.status === 'PENDING' ? 'Đang xử lý' :
+                   transaction.status === 'FAILED' ? 'Thất bại' : 'Đã hủy'}
+                </Text>
+              </View>
+            </View>
+          ))
+        )}
+      </View>
 
       {/* Thông tin bổ sung */}
       <View style={styles.infoCard}>
@@ -470,6 +614,87 @@ const styles = StyleSheet.create({
   infoValue: {
     fontSize: 14,
     color: '#2c3e50',
+    fontWeight: '500',
+  },
+  historyCard: {
+    backgroundColor: 'white',
+    margin: 16,
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  historyTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+    marginBottom: 16,
+  },
+  emptyHistory: {
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  emptyHistoryText: {
+    fontSize: 14,
+    color: '#7f8c8d',
+    marginTop: 12,
+  },
+  transactionItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f8f9fa',
+  },
+  transactionLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  transactionIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  transactionInfo: {
+    flex: 1,
+  },
+  transactionDescription: {
+    fontSize: 14,
+    color: '#2c3e50',
+    fontWeight: '500',
+    marginBottom: 4,
+  },
+  transactionDate: {
+    fontSize: 12,
+    color: '#7f8c8d',
+    marginBottom: 2,
+  },
+  transactionGateway: {
+    fontSize: 11,
+    color: '#3498db',
+    fontWeight: '500',
+  },
+  transactionRight: {
+    alignItems: 'flex-end',
+  },
+  transactionAmount: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  transactionStatus: {
+    fontSize: 11,
     fontWeight: '500',
   },
 });
