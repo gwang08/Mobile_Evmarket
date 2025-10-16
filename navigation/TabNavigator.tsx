@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, View, Text } from 'react-native';
 import { RouteProp, useRoute } from '@react-navigation/native';
 import { useAuth } from '../contexts/AuthContext';
+import ChatbotWidget from '../components/ChatbotWidget';
 
 // Import screens
 import HomeScreen from '../screens/HomeScreen';
@@ -15,7 +16,8 @@ import SellScreen from '../screens/SellScreen';
 export type TabParamList = {
   Home: undefined;
   Products: { initialTab?: 'vehicles' | 'batteries' } | undefined;
-  Sell: undefined;
+  // Sell is optional and only mounted when authenticated
+  Sell?: undefined;
   // Wallet is optional and only mounted when authenticated
   Wallet?: undefined;
   Profile: undefined;
@@ -31,9 +33,10 @@ export default function TabNavigator({ initialRouteName }: TabNavigatorProps) {
   const { isAuthenticated } = useAuth();
 
   return (
-    <Tab.Navigator
-      initialRouteName={initialRouteName || 'Home'}
-      screenOptions={({ route }) => ({
+    <>
+      <Tab.Navigator
+        initialRouteName={initialRouteName || 'Home'}
+        screenOptions={({ route }) => ({
         tabBarIcon: ({ focused, color, size }) => {
           let iconName: keyof typeof Ionicons.glyphMap;
           let iconSize = size;
@@ -89,16 +92,18 @@ export default function TabNavigator({ initialRouteName }: TabNavigatorProps) {
         }}
       />
 
-      {/* Sell tab always visible but requires auth to use */}
-      <Tab.Screen 
-        name="Sell" 
-        component={SellScreen}
-        options={{
-          title: '',
-          headerTitle: 'Đăng bán sản phẩm',
-          tabBarLabelStyle: styles.sellTabLabel,
-        }}
-      />
+      {/* Sell tab only visible when authenticated */}
+      {isAuthenticated && (
+        <Tab.Screen 
+          name="Sell" 
+          component={SellScreen}
+          options={{
+            title: '',
+            headerTitle: 'Đăng bán sản phẩm',
+            tabBarLabelStyle: styles.sellTabLabel,
+          }}
+        />
+      )}
 
       {/* Wallet only visible when authenticated */}
       {isAuthenticated && (
@@ -121,6 +126,10 @@ export default function TabNavigator({ initialRouteName }: TabNavigatorProps) {
         }}
       />
     </Tab.Navigator>
+    
+    {/* Chatbot Widget */}
+    <ChatbotWidget />
+    </>
   );
 }
 
@@ -129,9 +138,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
     borderTopWidth: 1,
     borderTopColor: '#ecf0f1',
-    height: 60,
-    paddingBottom: 8,
-    paddingTop: 8,
+    height: 75,
+    paddingBottom: 12,
+    paddingTop: 12,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,

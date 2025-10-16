@@ -40,12 +40,41 @@ export interface CreateVehicleRequest {
 export interface UpdateVehicleRequest extends Partial<CreateVehicleRequest> {}
 
 export const vehicleService = {
-  getAllVehicles: async (): Promise<VehiclesResponse> => {
+  getAllVehicles: async (page: number = 1, limit: number = 10): Promise<VehiclesResponse> => {
     try {
-      const response = await apiClient.get<VehiclesResponse>('/vehicles/');
+      const response = await apiClient.get<VehiclesResponse>(`/vehicles/?page=${page}&limit=${limit}`);
       return response.data;
     } catch (error) {
       console.error('Error fetching vehicles:', error);
+      throw error;
+    }
+  },
+
+  // Fetch available vehicles until we get the desired count
+  getAvailableVehicles: async (desiredCount: number = 6): Promise<Vehicle[]> => {
+    const availableVehicles: Vehicle[] = [];
+    let currentPage = 1;
+    const limit = 10;
+    
+    try {
+      while (availableVehicles.length < desiredCount) {
+        const response = await apiClient.get<VehiclesResponse>(`/vehicles/?page=${currentPage}&limit=${limit}`);
+        const pageVehicles = response.data.data.vehicles.filter(v => v.status === 'AVAILABLE');
+        
+        availableVehicles.push(...pageVehicles);
+        
+        // Check if we've reached the last page
+        if (currentPage >= (response.data.data.totalPages || 1)) {
+          break;
+        }
+        
+        currentPage++;
+      }
+      
+      // Return only the desired count
+      return availableVehicles.slice(0, desiredCount);
+    } catch (error) {
+      console.error('Error fetching available vehicles:', error);
       throw error;
     }
   },

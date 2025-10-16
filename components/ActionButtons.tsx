@@ -96,11 +96,11 @@ export default function ActionButtons({
       
       <View style={styles.buttonContainer}>
         <TouchableOpacity style={styles.negotiateButton} onPress={handleNegotiatePress}>
-          <Text style={styles.negotiateButtonText}>💬 Thương lượng</Text>
+          <Text style={styles.negotiateButtonText}> Thương lượng</Text>
         </TouchableOpacity>
         
         <TouchableOpacity style={styles.buyButton} onPress={handleBuyPress}>
-          <Text style={styles.buyButtonText}>🛒 Mua ngay</Text>
+          <Text style={styles.buyButtonText}> Mua ngay</Text>
         </TouchableOpacity>
       </View>
     </View>

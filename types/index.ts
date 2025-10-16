@@ -102,6 +102,10 @@ export interface VehiclesResponse {
   message: string;
   data: {
     vehicles: Vehicle[];
+    page?: number;
+    limit?: number;
+    totalPages?: number;
+    totalResults?: number;
   };
 }
 
@@ -139,6 +143,10 @@ export interface BatteriesResponse {
   message: string;
   data: {
     batteries: Battery[];
+    page?: number;
+    limit?: number;
+    totalPages?: number;
+    totalResults?: number;
   };
 }
 
@@ -213,4 +221,78 @@ export interface WalletHistoryResponse {
     totalPages: number;
     totalResults: number;
   };
+}
+
+// Checkout Types
+export interface CheckoutRequest {
+  listingId: string;
+  listingType: 'VEHICLE' | 'BATTERY';
+  paymentMethod: 'MOMO' | 'WALLET';
+}
+
+export interface MoMoPaymentInfo {
+  partnerCode: string;
+  orderId: string;
+  requestId: string;
+  amount: number;
+  responseTime: number;
+  message: string;
+  resultCode: number;
+  payUrl: string;
+  deeplink: string;
+  qrCodeUrl: string;
+  deeplinkMiniApp: string;
+}
+
+export interface CheckoutResponse {
+  message: string;
+  data: {
+    transactionId: string;
+    paymentInfo: MoMoPaymentInfo | null;
+  };
+}
+
+// Transaction History Types
+export interface Transaction {
+  id: string;
+  buyerId: string;
+  status: 'PENDING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
+  vehicleId: string | null;
+  batteryId: string | null;
+  finalPrice: number;
+  paymentGateway: 'MOMO' | 'WALLET';
+  paymentDetail: any;
+  createdAt: string;
+  updatedAt: string;
+  vehicle: {
+    id: string;
+    title: string;
+    images: string[];
+  } | null;
+  battery: {
+    id: string;
+    title: string;
+    images: string[];
+  } | null;
+  review: any;
+}
+
+export interface TransactionHistoryResponse {
+  message: string;
+  data: {
+    transactions: Transaction[];
+    page: number;
+    limit: number;
+    totalPages: number;
+    totalResults: number;
+  };
+}
+
+// Chatbot Types
+export interface ChatbotRequest {
+  question: string;
+}
+
+export interface ChatbotResponse {
+  answer: string;
 }

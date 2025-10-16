@@ -46,19 +46,61 @@ export default function ProductsScreen() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [vehiclesResponse, batteriesResponse] = await Promise.all([
-        vehicleService.getAllVehicles(),
-        batteryService.getAllBatteries()
+      
+      // Fetch all pages from API to get complete list
+      const [allVehicles, allBatteries] = await Promise.all([
+        fetchAllVehicles(),
+        fetchAllBatteries()
       ]);
       
-      setVehicles(vehiclesResponse.data.vehicles);
-      setBatteries(batteriesResponse.data.batteries);
+      setVehicles(allVehicles);
+      setBatteries(allBatteries);
     } catch (error) {
       console.error('Error fetching data:', error);
       Alert.alert('Lỗi', 'Không thể tải dữ liệu. Vui lòng thử lại.');
     } finally {
       setLoading(false);
     }
+  };
+
+  // Helper function to fetch all vehicles from all pages
+  const fetchAllVehicles = async (): Promise<Vehicle[]> => {
+    const allVehicles: Vehicle[] = [];
+    let currentPage = 1;
+    let hasMore = true;
+
+    while (hasMore) {
+      const response = await vehicleService.getAllVehicles(currentPage, 10);
+      allVehicles.push(...response.data.vehicles);
+      
+      if (currentPage >= (response.data.totalPages || 1)) {
+        hasMore = false;
+      } else {
+        currentPage++;
+      }
+    }
+    
+    return allVehicles;
+  };
+
+  // Helper function to fetch all batteries from all pages
+  const fetchAllBatteries = async (): Promise<Battery[]> => {
+    const allBatteries: Battery[] = [];
+    let currentPage = 1;
+    let hasMore = true;
+
+    while (hasMore) {
+      const response = await batteryService.getAllBatteries(currentPage, 10);
+      allBatteries.push(...response.data.batteries);
+      
+      if (currentPage >= (response.data.totalPages || 1)) {
+        hasMore = false;
+      } else {
+        currentPage++;
+      }
+    }
+    
+    return allBatteries;
   };
 
   const onRefresh = async () => {
@@ -71,11 +113,17 @@ export default function ProductsScreen() {
     fetchData();
   }, []);
 
-  // Get unique brands for vehicles
-  const vehicleBrands = ['Tất cả', ...Array.from(new Set(vehicles.map(v => v.brand)))];
+  // Filter only AVAILABLE items first for dropdown options
+  const availableVehicles = vehicles.filter(v => v.status === 'AVAILABLE');
+  const availableBatteries = batteries.filter(b => b.status === 'AVAILABLE');
+
+
+
+  // Get unique brands for vehicles (only from AVAILABLE)
+  const vehicleBrands = ['Tất cả', ...Array.from(new Set(availableVehicles.map(v => v.brand)))];
   
-  // Get unique years for vehicles
-  const vehicleYears = ['Tất cả', ...Array.from(new Set(vehicles.map(v => v.year.toString()))).sort((a, b) => b.localeCompare(a))];
+  // Get unique years for vehicles (only from AVAILABLE)
+  const vehicleYears = ['Tất cả', ...Array.from(new Set(availableVehicles.map(v => v.year.toString()))).sort((a, b) => b.localeCompare(a))];
   
   // Price ranges
   const priceRanges = [
@@ -86,8 +134,8 @@ export default function ProductsScreen() {
     'Trên 1.5 tỷ'
   ];
 
-  // Get unique brands for batteries
-  const batteryBrands = ['Tất cả', ...Array.from(new Set(batteries.map(b => b.brand)))];
+  // Get unique brands for batteries (only from AVAILABLE)
+  const batteryBrands = ['Tất cả', ...Array.from(new Set(availableBatteries.map(b => b.brand)))];
   
   // Capacity ranges
   const capacityRanges = [
@@ -107,8 +155,8 @@ export default function ProductsScreen() {
     'Dưới 80%'
   ];
 
-  // Filter vehicles
-  const filteredVehicles = vehicles.filter(vehicle => {
+  // Filter vehicles (already filtered to AVAILABLE only)
+  const filteredVehicles = availableVehicles.filter(vehicle => {
     const matchesSearch = vehicle.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          vehicle.brand.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesBrand = selectedBrand === 'Tất cả' || vehicle.brand === selectedBrand;
@@ -136,8 +184,8 @@ export default function ProductsScreen() {
     return matchesSearch && matchesBrand && matchesYear && matchesPrice;
   });
 
-  // Filter batteries
-  const filteredBatteries = batteries.filter(battery => {
+  // Filter batteries (already filtered to AVAILABLE only)
+  const filteredBatteries = availableBatteries.filter(battery => {
     const matchesSearch = battery.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          battery.brand.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesBrand = selectedBatteryBrand === 'Tất cả' || battery.brand === selectedBatteryBrand;
@@ -231,7 +279,7 @@ export default function ProductsScreen() {
               onPress={() => setActiveTab('vehicles')}
             >
               <Text style={[styles.tabText, activeTab === 'vehicles' && styles.activeTabText]}>
-                Xe điện ({vehicles.length})
+                Xe điện 
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -239,7 +287,7 @@ export default function ProductsScreen() {
               onPress={() => setActiveTab('batteries')}
             >
               <Text style={[styles.tabText, activeTab === 'batteries' && styles.activeTabText]}>
-                Pin ({batteries.length})
+                Pin 
               </Text>
             </TouchableOpacity>
           </View>

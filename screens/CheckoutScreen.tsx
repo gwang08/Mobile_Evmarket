@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Alert,
   SafeAreaView,
+  Linking,
 } from 'react-native';
 import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -16,6 +17,7 @@ import { RootStackParamList } from '../navigation/RootNavigator';
 import { Vehicle, Battery } from '../types';
 import { vehicleService } from '../services/vehicleService';
 import { batteryService } from '../services/batteryService';
+import { checkoutService } from '../services/checkoutService';
 import PaymentMethod from '../components/PaymentMethod';
 
 type CheckoutScreenRouteProp = RouteProp<RootStackParamList, 'Checkout'>;
@@ -28,7 +30,7 @@ export default function CheckoutScreen() {
 
   const [product, setProduct] = useState<Vehicle | Battery | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'qr' | 'momo' | null>(null);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'MOMO' | 'WALLET' | null>(null);
   const [processing, setProcessing] = useState(false);
 
   useEffect(() => {
@@ -40,10 +42,36 @@ export default function CheckoutScreen() {
       setLoading(true);
       if (productType === 'vehicle') {
         const response = await vehicleService.getVehicleById(productId);
-        setProduct(response.data.vehicle);
+        const vehicle = response.data.vehicle;
+        setProduct(vehicle);
+        
+        // Check if product is not available
+        if (vehicle.status !== 'AVAILABLE') {
+          Alert.alert(
+            'Sản phẩm không khả dụng',
+            vehicle.status === 'SOLD' 
+              ? 'Sản phẩm này đã được bán. Vui lòng chọn sản phẩm khác.'
+              : 'Sản phẩm này không còn khả dụng.',
+            [{ text: 'OK', onPress: () => navigation.goBack() }]
+          );
+          return;
+        }
       } else {
         const response = await batteryService.getBatteryById(productId);
-        setProduct(response.data.battery);
+        const battery = response.data.battery;
+        setProduct(battery);
+        
+        // Check if product is not available
+        if (battery.status !== 'AVAILABLE') {
+          Alert.alert(
+            'Sản phẩm không khả dụng',
+            battery.status === 'SOLD' 
+              ? 'Sản phẩm này đã được bán. Vui lòng chọn sản phẩm khác.'
+              : 'Sản phẩm này không còn khả dụng.',
+            [{ text: 'OK', onPress: () => navigation.goBack() }]
+          );
+          return;
+        }
       }
     } catch (error) {
       console.error('Error fetching product detail:', error);
@@ -61,31 +89,96 @@ export default function CheckoutScreen() {
     }).format(price);
   };
 
-  const handlePayment = () => {
+  const handlePayment = async () => {
     if (!selectedPaymentMethod) {
       Alert.alert('Thông báo', 'Vui lòng chọn phương thức thanh toán');
       return;
     }
 
-    setProcessing(true);
+    if (!product) {
+      Alert.alert('Lỗi', 'Không tìm thấy thông tin sản phẩm');
+      return;
+    }
 
-    // Simulate payment processing
-    setTimeout(() => {
+    try {
+      setProcessing(true);
+
+      const checkoutData = {
+        listingId: productId,
+        listingType: productType === 'vehicle' ? 'VEHICLE' as const : 'BATTERY' as const,
+        paymentMethod: selectedPaymentMethod,
+      };
+
+      const response = await checkoutService.initiateCheckout(checkoutData);
+
+      if (selectedPaymentMethod === 'MOMO' && response.data.paymentInfo) {
+        // Open MoMo app using deeplink
+        const { deeplink, payUrl } = response.data.paymentInfo;
+        
+        const canOpen = await Linking.canOpenURL(deeplink);
+        if (canOpen) {
+          await Linking.openURL(deeplink);
+          
+          // Show instruction
+          Alert.alert(
+            'Đang chuyển đến MoMo',
+            'Vui lòng hoàn tất thanh toán trên ứng dụng MoMo. Sau khi thanh toán, quay lại ứng dụng để kiểm tra trạng thái đơn hàng.',
+            [
+              {
+                text: 'OK',
+                onPress: () => {
+                  // Navigate to transaction history or home
+                  navigation.navigate('Main');
+                }
+              }
+            ]
+          );
+        } else {
+          // Fallback to web URL if can't open MoMo app
+          await Linking.openURL(payUrl);
+        }
+      } else if (selectedPaymentMethod === 'WALLET') {
+        // Wallet payment requires 2 steps:
+        // 1. Initiate checkout (already done above - creates PENDING transaction)
+        // 2. Pay with wallet (completes the transaction)
+        
+        const transactionId = response.data.transactionId;
+        
+        // Step 2: Complete payment with wallet
+        const paymentResult = await checkoutService.payWithWallet(transactionId);
+        
+        // Payment successful, transaction is now COMPLETED
+        Alert.alert(
+          'Thanh toán thành công!',
+          `Đã thanh toán ${formatPrice(product.price)} từ ví EVmarket.\n\nGiao dịch đã hoàn tất. Bạn có thể xem lại trong lịch sử mua hàng.`,
+          [
+            {
+              text: 'Xem lịch sử',
+              onPress: () => {
+                navigation.goBack(); // Go back to product detail first
+                setTimeout(() => {
+                  navigation.navigate('TransactionHistory');
+                }, 100);
+              },
+            },
+            {
+              text: 'OK',
+              onPress: () => {
+                // Go back to product detail, which will now show SOLD status
+                navigation.goBack();
+              },
+              style: 'cancel'
+            }
+          ]
+        );
+      }
+    } catch (error: any) {
+      console.error('Error processing checkout:', error);
+      const errorMessage = error.response?.data?.message || 'Không thể xử lý thanh toán. Vui lòng thử lại.';
+      Alert.alert('Lỗi', errorMessage);
+    } finally {
       setProcessing(false);
-      
-      const paymentMethodText = selectedPaymentMethod === 'qr' ? 'Quét mã QR' : 'Ví MoMo';
-      
-      Alert.alert(
-        'Thanh toán thành công!',
-        `Đã thanh toán ${formatPrice(product?.price || 0)} qua ${paymentMethodText}\n\nĐơn hàng sẽ được xử lý trong vòng 24h.`,
-        [
-          {
-            text: 'OK',
-            onPress: () => navigation.navigate('Main'),
-          },
-        ]
-      );
-    }, 2000);
+    }
   };
 
   if (loading) {

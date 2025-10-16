@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,9 +10,13 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Linking,
 } from 'react-native';
+import * as WebBrowser from 'expo-web-browser';
+import * as AuthSession from 'expo-auth-session';
 import { useAuth } from '../contexts/AuthContext';
+
+// Complete the auth session for Google Sign-In
+WebBrowser.maybeCompleteAuthSession();
 
 interface LoginScreenProps {
   onSwitchToRegister: () => void;
@@ -26,21 +30,41 @@ export default function LoginScreen({ onSwitchToRegister }: LoginScreenProps) {
 
   const handleGoogleLogin = async () => {
     try {
-      Alert.alert(
-        'Đăng nhập với Google',
-        'Chức năng này sẽ chuyển bạn đến trang đăng nhập Google. Tiếp tục?',
-        [
-          { text: 'Hủy', style: 'cancel' },
-          { 
-            text: 'Tiếp tục', 
-            onPress: () => {
-              Linking.openURL('https://evmarket-api-staging.onrender.com/api/v1/auth/google');
-            }
-          }
-        ]
+      setIsLoading(true);
+      
+      // Open Google OAuth in WebBrowser (in-app browser)
+      const result = await WebBrowser.openAuthSessionAsync(
+        'https://evmarket-api-staging.onrender.com/api/v1/auth/google',
+        'evmarket://auth-callback'
       );
-    } catch (error) {
-      Alert.alert('Lỗi', 'Không thể mở trang đăng nhập Google');
+
+      if (result.type === 'success') {
+        // Parse the callback URL to get the token
+        const url = result.url;
+        
+        // Extract token from URL (adjust based on your backend response)
+        // Example: callback?token=xxx&user=xxx
+        const params = new URLSearchParams(url.split('?')[1]);
+        const token = params.get('token');
+        const userStr = params.get('user');
+        
+        if (token && userStr) {
+          const user = JSON.parse(decodeURIComponent(userStr));
+          
+          // Save to auth context (you might need to add this method)
+          await login(user.email, token);
+          Alert.alert('Thành công', 'Đăng nhập với Google thành công!');
+        } else {
+          Alert.alert('Lỗi', 'Không thể lấy thông tin đăng nhập từ Google');
+        }
+      } else if (result.type === 'cancel') {
+        Alert.alert('Đã hủy', 'Bạn đã hủy đăng nhập với Google');
+      }
+    } catch (error: any) {
+      console.error('Google login error:', error);
+      Alert.alert('Lỗi', 'Không thể đăng nhập với Google: ' + error.message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
