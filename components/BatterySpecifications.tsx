@@ -3,7 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { BatterySpecifications as BatterySpec } from '../types';
 
 interface BatterySpecificationsProps {
-  specifications: BatterySpec;
+  specifications: BatterySpec | null;
   capacity: number;
   year: number;
   health: number | null;
@@ -23,6 +23,34 @@ export default function BatterySpecifications({ specifications, capacity, year, 
       <Text style={styles.specValue}>{value}</Text>
     </View>
   );
+
+  // Handle null specifications
+  if (!specifications) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.title}>Thông số kỹ thuật</Text>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Thông tin cơ bản</Text>
+          {renderSpecRow('Dung lượng', `${capacity}kWh`)}
+          {renderSpecRow('Năm sản xuất', year.toString())}
+          {health && (
+            <View style={styles.specRow}>
+              <Text style={styles.specLabel}>Sức khỏe pin</Text>
+              <View style={styles.healthContainer}>
+                <View style={[styles.healthDot, { backgroundColor: getHealthColor(health) }]} />
+                <Text style={[styles.healthValue, { color: getHealthColor(health) }]}>
+                  {health}%
+                </Text>
+              </View>
+            </View>
+          )}
+        </View>
+        <View style={styles.section}>
+          <Text style={styles.noDataText}>Thông tin chi tiết chưa có sẵn</Text>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -132,5 +160,12 @@ const styles = StyleSheet.create({
   healthValue: {
     fontSize: 14,
     fontWeight: '600',
+  },
+  noDataText: {
+    fontSize: 14,
+    color: '#95a5a6',
+    fontStyle: 'italic',
+    textAlign: 'center',
+    paddingVertical: 20,
   },
 });

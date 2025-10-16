@@ -11,7 +11,6 @@ export default function App() {
   useEffect(() => {
     // Handle deep link when app is already running
     const handleDeepLink = (url: string) => {
-      console.log('Deep link received:', url);
       
       // Check if it's a payment success callback
       if (url.includes('evmarket://payment')) {

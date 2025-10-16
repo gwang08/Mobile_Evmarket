@@ -11,6 +11,8 @@ import { vehicleService } from '../services/vehicleService';
 import { batteryService } from '../services/batteryService';
 import VehicleCard from '../components/VehicleCard';
 import BatteryCard from '../components/BatteryCard';
+import { Ionicons } from '@expo/vector-icons';
+import { useAuth } from '../contexts/AuthContext';
 
 type HomeScreenNavigationProp = CompositeNavigationProp<
   StackNavigationProp<RootStackParamList>,
@@ -19,6 +21,7 @@ type HomeScreenNavigationProp = CompositeNavigationProp<
 
 export default function HomeScreen() {
   const navigation = useNavigation<HomeScreenNavigationProp>();
+  const { isAuthenticated, setShowLoginPrompt } = useAuth();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [batteries, setBatteries] = useState<Battery[]>([]);
   const [loading, setLoading] = useState(true);
@@ -27,22 +30,17 @@ export default function HomeScreen() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [vehiclesResponse, batteriesResponse] = await Promise.all([
-        vehicleService.getAllVehicles(),
-        batteryService.getAllBatteries()
+      
+      // Fetch 6 available vehicles and batteries
+      const [availableVehicles, availableBatteries] = await Promise.all([
+        vehicleService.getAvailableVehicles(6),
+        batteryService.getAvailableBatteries(6)
       ]);
       
-      // Show all vehicles and batteries, limit to display count
-      const topVehicles = vehiclesResponse.data.vehicles.slice(0, 6);
-      const topBatteries = batteriesResponse.data.batteries.slice(0, 6);
+  
       
-      console.log('Total vehicles from API:', vehiclesResponse.data.vehicles.length);
-      console.log('Showing vehicles:', topVehicles.length);
-      console.log('Total batteries from API:', batteriesResponse.data.batteries.length);
-      console.log('Showing batteries:', topBatteries.length);
-      
-      setVehicles(topVehicles);
-      setBatteries(topBatteries);
+      setVehicles(availableVehicles);
+      setBatteries(availableBatteries);
     } catch (error) {
       console.error('Error fetching data:', error);
       Alert.alert('Lỗi', 'Không thể tải dữ liệu. Vui lòng thử lại.');
@@ -77,6 +75,27 @@ export default function HomeScreen() {
     navigation.navigate('Products', { initialTab: 'batteries' });
   };
 
+  const handleTransactionHistoryPress = () => {
+    if (!isAuthenticated) {
+      Alert.alert(
+        'Yêu cầu đăng nhập',
+        'Bạn cần đăng nhập để xem lịch sử mua hàng.',
+        [
+          { text: 'Hủy', style: 'cancel' },
+          { 
+            text: 'Đăng nhập', 
+            onPress: () => {
+              navigation.navigate('Main', { screen: 'Profile' });
+              setShowLoginPrompt(true);
+            }
+          }
+        ]
+      );
+      return;
+    }
+    navigation.navigate('TransactionHistory');
+  };
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -96,17 +115,31 @@ export default function HomeScreen() {
       <View style={styles.content}>
         {/* Header Section */}
         <View style={styles.header}>
-          <Text style={styles.title}>EV Market</Text>
-          <Text style={styles.subtitle}>Thị trường xe điện hàng đầu</Text>
+          <View style={styles.headerTop}>
+            <View>
+              <Text style={styles.title}>EV Market</Text>
+              <Text style={styles.subtitle}>Thị trường xe điện hàng đầu</Text>
+            </View>
+            <View style={styles.headerButtons}>
+              {isAuthenticated && (
+                <TouchableOpacity 
+                  style={styles.iconButton}
+                  onPress={handleTransactionHistoryPress}
+                >
+                  <Ionicons name="receipt" size={24} color="#3498db" />
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
           
           <View style={styles.trustSection}>
-            <Text style={styles.trustTitle}>The Trusted Marketplace for Second-hand EVs</Text>
+            <Text style={styles.trustTitle}>Nền tảng tin cậy cho xe điện đã qua sử dụng</Text>
             <Text style={styles.trustDescription}>
-              Buy and sell pre-owned electric vehicles, batteries, and charging equipment with confidence. 
-              All listings are verified by industry professionals.
+              Mua bán xe điện, pin và thiết bị sạc đã qua sử dụng với sự an tâm. 
+              Tất cả tin đăng đều được xác minh bởi chuyên gia trong ngành.
             </Text>
             <TouchableOpacity style={styles.getStartedButton}>
-              <Text style={styles.getStartedText}>Get Started</Text>
+              <Text style={styles.getStartedText}>Bắt đầu ngay</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -114,9 +147,9 @@ export default function HomeScreen() {
         {/* Top EV Deals Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Top EV Deals</Text>
+            <Text style={styles.sectionTitle}>Xe điện hàng đầu</Text>
             <TouchableOpacity onPress={handleViewAllVehicles}>
-              <Text style={styles.viewAllText}>View all</Text>
+              <Text style={styles.viewAllText}>Xem tất cả</Text>
             </TouchableOpacity>
           </View>
           
@@ -134,9 +167,9 @@ export default function HomeScreen() {
         {/* Top Battery Listings Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Top Battery Listings</Text>
+            <Text style={styles.sectionTitle}>Pin xe điện hàng đầu</Text>
             <TouchableOpacity onPress={handleViewAllBatteries}>
-              <Text style={styles.viewAllText}>View all</Text>
+              <Text style={styles.viewAllText}>Xem tất cả</Text>
             </TouchableOpacity>
           </View>
           
@@ -153,16 +186,16 @@ export default function HomeScreen() {
 
         {/* Why Choose EV Section */}
         <View style={styles.whyChooseSection}>
-          <Text style={styles.whyChooseTitle}>Why Choose EV?</Text>
+          <Text style={styles.whyChooseTitle}>Tại sao chọn xe điện?</Text>
           
           <View style={styles.featureItem}>
             <View style={styles.featureIcon}>
               <Text style={styles.featureIconText}>🌱</Text>
             </View>
             <View style={styles.featureContent}>
-              <Text style={styles.featureTitle}>Environmentally Friendly</Text>
+              <Text style={styles.featureTitle}>Thân thiện môi trường</Text>
               <Text style={styles.featureDescription}>
-                Zero emissions and eco-friendly transportation for a better future.
+                Không khí thải và phương tiện giao thông thân thiện với môi trường cho tương lai tốt đẹp hơn.
               </Text>
             </View>
           </View>
@@ -172,9 +205,9 @@ export default function HomeScreen() {
               <Text style={styles.featureIconText}>💰</Text>
             </View>
             <View style={styles.featureContent}>
-              <Text style={styles.featureTitle}>Cost Effective</Text>
+              <Text style={styles.featureTitle}>Tiết kiệm chi phí</Text>
               <Text style={styles.featureDescription}>
-                Save on fuel costs and maintenance with electric vehicles.
+                Tiết kiệm chi phí nhiên liệu và bảo dưỡng với xe điện.
               </Text>
             </View>
           </View>
@@ -184,9 +217,9 @@ export default function HomeScreen() {
               <Text style={styles.featureIconText}>🔧</Text>
             </View>
             <View style={styles.featureContent}>
-              <Text style={styles.featureTitle}>Low Maintenance</Text>
+              <Text style={styles.featureTitle}>Bảo dưỡng đơn giản</Text>
               <Text style={styles.featureDescription}>
-                Electric vehicles require less maintenance than traditional cars.
+                Xe điện yêu cầu ít bảo dưỡng hơn so với xe truyền thống.
               </Text>
             </View>
           </View>
@@ -194,12 +227,12 @@ export default function HomeScreen() {
 
         {/* CTA Section */}
         <View style={styles.ctaSection}>
-          <Text style={styles.ctaTitle}>Ready to Buy or Sell Your Electric Vehicle?</Text>
+          <Text style={styles.ctaTitle}>Sẵn sàng mua hoặc bán xe điện của bạn?</Text>
           <Text style={styles.ctaDescription}>
-            Join thousands of satisfied users who trust our platform for their EV transactions.
+            Tham gia cùng hàng ngàn người dùng hài lòng tin tưởng nền tảng của chúng tôi cho giao dịch xe điện.
           </Text>
           <TouchableOpacity style={styles.ctaButton}>
-            <Text style={styles.ctaButtonText}>Browse Listings</Text>
+            <Text style={styles.ctaButtonText}>Khám phá sản phẩm</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -230,6 +263,24 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     padding: 20,
     marginBottom: 20,
+  },
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 15,
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  iconButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#ecf0f1',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   title: {
     fontSize: 28,

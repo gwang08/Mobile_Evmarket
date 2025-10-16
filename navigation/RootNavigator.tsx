@@ -8,6 +8,8 @@ import CheckoutScreen from '../screens/CheckoutScreen';
 import CreateVehicleScreen from '../screens/CreateVehicleScreen';
 import CreateBatteryScreen from '../screens/CreateBatteryScreen';
 import MyListingsScreen from '../screens/MyListingsScreen';
+import TransactionHistoryScreen from '../screens/TransactionHistoryScreen';
+import ChatbotScreen from '../screens/ChatbotScreen';
 
 export type RootStackParamList = {
   Main: { screen?: keyof TabParamList } | undefined;
@@ -18,6 +20,8 @@ export type RootStackParamList = {
   CreateVehicle: undefined;
   CreateBattery: undefined;
   MyListings: undefined;
+  TransactionHistory: undefined;
+  Chatbot: undefined;
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -109,6 +113,20 @@ export default function RootNavigator() {
         component={MyListingsScreen}
         options={{ 
           title: 'Sản phẩm của tôi',
+        }}
+      />
+      <Stack.Screen 
+        name="TransactionHistory" 
+        component={TransactionHistoryScreen}
+        options={{ 
+          title: 'Lịch sử mua hàng',
+        }}
+      />
+      <Stack.Screen 
+        name="Chatbot" 
+        component={ChatbotScreen}
+        options={{ 
+          title: 'Trợ lý AI',
         }}
       />
     </Stack.Navigator>

@@ -2,8 +2,8 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 
 interface PaymentMethodProps {
-  selectedMethod: 'qr' | 'momo' | null;
-  onMethodSelect: (method: 'qr' | 'momo') => void;
+  selectedMethod: 'MOMO' | 'WALLET' | null;
+  onMethodSelect: (method: 'MOMO' | 'WALLET') => void;
 }
 
 export default function PaymentMethod({ selectedMethod, onMethodSelect }: PaymentMethodProps) {
@@ -11,39 +11,13 @@ export default function PaymentMethod({ selectedMethod, onMethodSelect }: Paymen
     <View style={styles.container}>
       <Text style={styles.title}>Phương thức thanh toán</Text>
       
-      {/* QR Code Payment */}
-      <TouchableOpacity
-        style={[
-          styles.methodCard,
-          selectedMethod === 'qr' && styles.selectedCard
-        ]}
-        onPress={() => onMethodSelect('qr')}
-      >
-        <View style={styles.methodContent}>
-          <View style={styles.methodIcon}>
-            <Text style={styles.qrIcon}>📱</Text>
-          </View>
-          <View style={styles.methodInfo}>
-            <Text style={styles.methodName}>Quét mã QR</Text>
-            <Text style={styles.methodDescription}>
-              Thanh toán bằng cách quét mã QR qua ứng dụng ngân hàng
-            </Text>
-          </View>
-          <View style={styles.radioButton}>
-            {selectedMethod === 'qr' && (
-              <View style={styles.radioSelected} />
-            )}
-          </View>
-        </View>
-      </TouchableOpacity>
-
       {/* MoMo Payment */}
       <TouchableOpacity
         style={[
           styles.methodCard,
-          selectedMethod === 'momo' && styles.selectedCard
+          selectedMethod === 'MOMO' && styles.selectedCard
         ]}
-        onPress={() => onMethodSelect('momo')}
+        onPress={() => onMethodSelect('MOMO')}
       >
         <View style={styles.methodContent}>
           <View style={styles.methodIcon}>
@@ -58,7 +32,33 @@ export default function PaymentMethod({ selectedMethod, onMethodSelect }: Paymen
             </Text>
           </View>
           <View style={styles.radioButton}>
-            {selectedMethod === 'momo' && (
+            {selectedMethod === 'MOMO' && (
+              <View style={styles.radioSelected} />
+            )}
+          </View>
+        </View>
+      </TouchableOpacity>
+
+      {/* Wallet Payment */}
+      <TouchableOpacity
+        style={[
+          styles.methodCard,
+          selectedMethod === 'WALLET' && styles.selectedCard
+        ]}
+        onPress={() => onMethodSelect('WALLET')}
+      >
+        <View style={styles.methodContent}>
+          <View style={styles.methodIcon}>
+            <Text style={styles.walletIcon}>💳</Text>
+          </View>
+          <View style={styles.methodInfo}>
+            <Text style={styles.methodName}>Ví EVmarket</Text>
+            <Text style={styles.methodDescription}>
+              Thanh toán bằng số dư trong ví EVmarket của bạn
+            </Text>
+          </View>
+          <View style={styles.radioButton}>
+            {selectedMethod === 'WALLET' && (
               <View style={styles.radioSelected} />
             )}
           </View>
@@ -112,7 +112,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 15,
   },
-  qrIcon: {
+  walletIcon: {
     fontSize: 30,
   },
   momoIcon: {

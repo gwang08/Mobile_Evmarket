@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Alert, SafeAreaView } from 'react-native';
-import { RouteProp, useRoute, useNavigation, CompositeNavigationProp } from '@react-navigation/native';
+import { RouteProp, useRoute, useNavigation, CompositeNavigationProp, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { RootStackParamList } from '../navigation/RootNavigator';
@@ -30,6 +30,13 @@ export default function BatteryDetailScreen() {
   useEffect(() => {
     fetchBatteryDetail();
   }, [batteryId]);
+
+  // Reload when screen comes into focus (after returning from checkout)
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchBatteryDetail();
+    }, [batteryId])
+  );
 
   const fetchBatteryDetail = async () => {
     try {
@@ -195,15 +202,30 @@ export default function BatteryDetailScreen() {
         </View>
       </ScrollView>
 
-      {/* Action Buttons */}
-      <ActionButtons 
-        price={battery.price}
-        productId={batteryId}
-        productType="battery"
-        onBuyPress={handleBuyPress}
-        onNegotiatePress={handleNegotiatePress}
-        onLoginRequired={handleLoginRequired}
-      />
+      {/* Action Buttons - Only show if battery is AVAILABLE */}
+      {battery.status === 'AVAILABLE' && (
+        <ActionButtons 
+          price={battery.price}
+          productId={batteryId}
+          productType="battery"
+          onBuyPress={handleBuyPress}
+          onNegotiatePress={handleNegotiatePress}
+          onLoginRequired={handleLoginRequired}
+        />
+      )}
+      
+      {/* Show status message if not available */}
+      {battery.status === 'SOLD' && (
+        <View style={styles.soldBanner}>
+          <Text style={styles.soldText}>Sản phẩm này đã được bán</Text>
+        </View>
+      )}
+      
+      {battery.status === 'DELISTED' && (
+        <View style={styles.delistedBanner}>
+          <Text style={styles.delistedText}>Sản phẩm này đã bị gỡ khỏi danh sách</Text>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -336,5 +358,25 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#7f8c8d',
     lineHeight: 22,
+  },
+  soldBanner: {
+    backgroundColor: '#e74c3c',
+    padding: 15,
+    alignItems: 'center',
+  },
+  soldText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  delistedBanner: {
+    backgroundColor: '#95a5a6',
+    padding: 15,
+    alignItems: 'center',
+  },
+  delistedText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });

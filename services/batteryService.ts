@@ -25,12 +25,41 @@ export interface CreateBatteryRequest {
 export interface UpdateBatteryRequest extends Partial<CreateBatteryRequest> {}
 
 export const batteryService = {
-  getAllBatteries: async (): Promise<BatteriesResponse> => {
+  getAllBatteries: async (page: number = 1, limit: number = 10): Promise<BatteriesResponse> => {
     try {
-      const response = await apiClient.get<BatteriesResponse>('/batteries/');
+      const response = await apiClient.get<BatteriesResponse>(`/batteries/?page=${page}&limit=${limit}`);
       return response.data;
     } catch (error) {
       console.error('Error fetching batteries:', error);
+      throw error;
+    }
+  },
+
+  // Fetch available batteries until we get the desired count
+  getAvailableBatteries: async (desiredCount: number = 6): Promise<Battery[]> => {
+    const availableBatteries: Battery[] = [];
+    let currentPage = 1;
+    const limit = 10;
+    
+    try {
+      while (availableBatteries.length < desiredCount) {
+        const response = await apiClient.get<BatteriesResponse>(`/batteries/?page=${currentPage}&limit=${limit}`);
+        const pageBatteries = response.data.data.batteries.filter(b => b.status === 'AVAILABLE');
+        
+        availableBatteries.push(...pageBatteries);
+        
+        // Check if we've reached the last page
+        if (currentPage >= (response.data.data.totalPages || 1)) {
+          break;
+        }
+        
+        currentPage++;
+      }
+      
+      // Return only the desired count
+      return availableBatteries.slice(0, desiredCount);
+    } catch (error) {
+      console.error('Error fetching available batteries:', error);
       throw error;
     }
   },
