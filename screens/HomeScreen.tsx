@@ -13,6 +13,7 @@ import VehicleCard from '../components/VehicleCard';
 import BatteryCard from '../components/BatteryCard';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
 
 type HomeScreenNavigationProp = CompositeNavigationProp<
   StackNavigationProp<RootStackParamList>,
@@ -22,6 +23,7 @@ type HomeScreenNavigationProp = CompositeNavigationProp<
 export default function HomeScreen() {
   const navigation = useNavigation<HomeScreenNavigationProp>();
   const { isAuthenticated, setShowLoginPrompt } = useAuth();
+  const { showError } = useToast();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [batteries, setBatteries] = useState<Battery[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,7 +45,7 @@ export default function HomeScreen() {
       setBatteries(availableBatteries);
     } catch (error) {
       console.error('Error fetching data:', error);
-      Alert.alert('Lỗi', 'Không thể tải dữ liệu. Vui lòng thử lại.');
+      showError('Không thể tải dữ liệu. Vui lòng thử lại.');
     } finally {
       setLoading(false);
     }

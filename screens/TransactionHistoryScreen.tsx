@@ -8,7 +8,6 @@ import {
   Image,
   ActivityIndicator,
   RefreshControl,
-  Alert,
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -16,11 +15,13 @@ import { RootStackParamList } from '../navigation/RootNavigator';
 import { Transaction } from '../types';
 import { transactionService } from '../services/transactionService';
 import { Ionicons } from '@expo/vector-icons';
+import { useToast } from '../contexts/ToastContext';
 
 type TransactionHistoryNavigationProp = StackNavigationProp<RootStackParamList>;
 
 export default function TransactionHistoryScreen() {
   const navigation = useNavigation<TransactionHistoryNavigationProp>();
+  const { showError } = useToast();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -52,7 +53,7 @@ export default function TransactionHistoryScreen() {
       setPage(1);
     } catch (error) {
       console.error('Error loading transactions:', error);
-      Alert.alert('Lỗi', 'Không thể tải lịch sử giao dịch');
+      showError('Không thể tải lịch sử giao dịch');
     } finally {
       setLoading(false);
     }

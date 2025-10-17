@@ -10,6 +10,7 @@ import {
   ActivityIndicator 
 } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
 import { useNavigation, useFocusEffect, CompositeNavigationProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
@@ -25,6 +26,7 @@ type ProfileNavigationProp = CompositeNavigationProp<
 
 export default function ProfileScreen() {
   const { user, isLoading, isAuthenticated, logout, showLoginPrompt, setShowLoginPrompt } = useAuth();
+  const { showInfo } = useToast();
   const [showLogin, setShowLogin] = useState(true);
   const navigation = useNavigation<ProfileNavigationProp>();
 
@@ -147,7 +149,7 @@ export default function ProfileScreen() {
             <TouchableOpacity 
               key={item.id} 
               style={styles.menuItem}
-              onPress={item.action || (() => Alert.alert('Thông báo', 'Chức năng đang phát triển'))}
+              onPress={item.action || (() => showInfo('Chức năng đang phát triển'))}
             >
               <Text style={styles.menuIcon}>{item.icon}</Text>
               <Text style={styles.menuTitle}>{item.title}</Text>

@@ -6,7 +6,6 @@ import {
   ScrollView,
   Image,
   ActivityIndicator,
-  Alert,
   TouchableOpacity,
   Linking,
 } from 'react-native';
@@ -15,12 +14,14 @@ import { RootStackParamList } from '../navigation/RootNavigator';
 import { SellerDetailResponse } from '../types';
 import { userService } from '../services/userService';
 import ReviewCard from '../components/ReviewCard';
+import { useToast } from '../contexts/ToastContext';
 
 type SellerDetailScreenRouteProp = RouteProp<RootStackParamList, 'SellerDetail'>;
 
 export default function SellerDetailScreen() {
   const route = useRoute<SellerDetailScreenRouteProp>();
   const { sellerId } = route.params;
+  const { showError } = useToast();
 
   const [sellerData, setSellerData] = useState<SellerDetailResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -36,7 +37,7 @@ export default function SellerDetailScreen() {
       setSellerData(data);
     } catch (error) {
       console.error('Error fetching seller detail:', error);
-      Alert.alert('Lỗi', 'Không thể tải thông tin người bán');
+      showError('Không thể tải thông tin người bán');
     } finally {
       setLoading(false);
     }

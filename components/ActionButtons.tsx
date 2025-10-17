@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
 
 interface ActionButtonsProps {
   price: number;
@@ -20,6 +21,7 @@ export default function ActionButtons({
   onLoginRequired
 }: ActionButtonsProps) {
   const { isAuthenticated } = useAuth();
+  const { showInfo } = useToast();
   
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('vi-VN', {
@@ -33,6 +35,7 @@ export default function ActionButtons({
       if (onLoginRequired) {
         onLoginRequired();
       } else {
+        // GIỮ Alert.alert cho login dialog (cần 2 buttons)
         Alert.alert(
           'Yêu cầu đăng nhập',
           'Bạn cần đăng nhập để mua sản phẩm này. Vui lòng đăng nhập để tiếp tục.',
@@ -54,7 +57,7 @@ export default function ActionButtons({
     if (onBuyPress) {
       onBuyPress();
     } else {
-      Alert.alert('Mua ngay', 'Chức năng đang phát triển');
+      showInfo('Chức năng đang phát triển');
     }
   };
 
@@ -63,6 +66,7 @@ export default function ActionButtons({
       if (onLoginRequired) {
         onLoginRequired();
       } else {
+        // GIỮ Alert.alert cho login dialog (cần 2 buttons)
         Alert.alert(
           'Yêu cầu đăng nhập',
           'Bạn cần đăng nhập để thương lượng với người bán. Vui lòng đăng nhập để tiếp tục.',
@@ -83,7 +87,7 @@ export default function ActionButtons({
     if (onNegotiatePress) {
       onNegotiatePress();
     } else {
-      Alert.alert('Thương lượng', 'Chức năng đang phát triển');
+      showInfo('Chức năng đang phát triển');
     }
   };
 

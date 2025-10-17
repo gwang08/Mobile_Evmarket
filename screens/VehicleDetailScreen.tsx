@@ -8,6 +8,7 @@ import { TabParamList } from '../navigation/TabNavigator';
 import { Vehicle } from '../types';
 import { vehicleService } from '../services/vehicleService';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
 import ImageGallery from '../components/ImageGallery';
 import VehicleSpecifications from '../components/VehicleSpecifications';
 import SellerInfo from '../components/SellerInfo';
@@ -26,6 +27,7 @@ export default function VehicleDetailScreen() {
   const [vehicle, setVehicle] = useState<Vehicle | null>(null);
   const [loading, setLoading] = useState(true);
   const { isAuthenticated, setShowLoginPrompt } = useAuth();
+  const { showError, showInfo } = useToast();
 
   useEffect(() => {
     fetchVehicleDetail();
@@ -45,7 +47,7 @@ export default function VehicleDetailScreen() {
       setVehicle(response.data.vehicle);
     } catch (error) {
       console.error('Error fetching vehicle detail:', error);
-      Alert.alert('Lỗi', 'Không thể tải thông tin xe. Vui lòng thử lại.');
+      showError('Không thể tải thông tin xe. Vui lòng thử lại.');
     } finally {
       setLoading(false);
     }
@@ -121,7 +123,7 @@ export default function VehicleDetailScreen() {
       return;
     }
 
-    Alert.alert('Thương lượng', `Gửi tin nhắn thương lượng cho ${vehicle?.seller?.name}`);
+    showInfo(`Gửi tin nhắn thương lượng cho ${vehicle?.seller?.name}`);
   };
 
   if (loading) {
