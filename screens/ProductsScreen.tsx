@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, ActivityIndicator, Alert, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../navigation/RootNavigator';
@@ -9,6 +9,7 @@ import { vehicleService } from '../services/vehicleService';
 import { batteryService } from '../services/batteryService';
 import VehicleCard from '../components/VehicleCard';
 import BatteryCard from '../components/BatteryCard';
+import { useToast } from '../contexts/ToastContext';
 
 type ProductsScreenNavigationProp = StackNavigationProp<RootStackParamList>;
 type ProductsScreenRouteProp = RouteProp<TabParamList, 'Products'>;
@@ -17,6 +18,7 @@ type TabType = 'vehicles' | 'batteries';
 export default function ProductsScreen() {
   const navigation = useNavigation<ProductsScreenNavigationProp>();
   const route = useRoute<ProductsScreenRouteProp>();
+  const { showError } = useToast();
   
   // Set initial tab based on route params
   const [activeTab, setActiveTab] = useState<TabType>(route.params?.initialTab || 'vehicles');
@@ -57,7 +59,7 @@ export default function ProductsScreen() {
       setBatteries(allBatteries);
     } catch (error) {
       console.error('Error fetching data:', error);
-      Alert.alert('Lỗi', 'Không thể tải dữ liệu. Vui lòng thử lại.');
+      showError('Không thể tải dữ liệu. Vui lòng thử lại.');
     } finally {
       setLoading(false);
     }

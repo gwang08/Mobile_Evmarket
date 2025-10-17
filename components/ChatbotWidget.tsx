@@ -102,11 +102,25 @@ export default function ChatbotWidget() {
       };
 
       setMessages((prev) => [...prev, botMessage]);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error asking chatbot:', error);
+      
+      // Xác định loại lỗi và hiển thị message phù hợp
+      let errorText = 'Xin lỗi, tôi gặp sự cố khi xử lý câu hỏi của bạn.';
+      
+      if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+        errorText = 'Kết nối quá lâu. Server có thể đang bận, vui lòng thử lại sau.';
+      } else if (error.response?.status === 400) {
+        errorText = 'Câu hỏi không hợp lệ. Vui lòng thử đặt câu hỏi khác về xe điện hoặc pin.';
+      } else if (error.response?.status >= 500) {
+        errorText = 'Server AI đang gặp sự cố. Vui lòng thử lại sau vài phút.';
+      } else if (error.message === 'Network Error') {
+        errorText = 'Không có kết nối internet. Vui lòng kiểm tra mạng và thử lại.';
+      }
+      
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: 'Xin lỗi, tôi gặp sự cố khi xử lý câu hỏi của bạn. Vui lòng thử lại sau.',
+        text: errorText,
         isUser: false,
         timestamp: new Date(),
       };

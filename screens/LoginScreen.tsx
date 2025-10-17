@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  Alert,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
@@ -14,6 +13,8 @@ import {
 import * as WebBrowser from 'expo-web-browser';
 import * as AuthSession from 'expo-auth-session';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
+import { parseErrorMessage } from '../utils/errorHandler';
 
 // Complete the auth session for Google Sign-In
 WebBrowser.maybeCompleteAuthSession();
@@ -27,6 +28,7 @@ export default function LoginScreen({ onSwitchToRegister }: LoginScreenProps) {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
+  const { showSuccess, showError, showWarning, showInfo } = useToast();
 
   const handleGoogleLogin = async () => {
     try {
@@ -53,16 +55,17 @@ export default function LoginScreen({ onSwitchToRegister }: LoginScreenProps) {
           
           // Save to auth context (you might need to add this method)
           await login(user.email, token);
-          Alert.alert('Thành công', 'Đăng nhập với Google thành công!');
+          showSuccess('Đăng nhập với Google thành công!');
         } else {
-          Alert.alert('Lỗi', 'Không thể lấy thông tin đăng nhập từ Google');
+          showError('Không thể lấy thông tin đăng nhập từ Google');
         }
       } else if (result.type === 'cancel') {
-        Alert.alert('Đã hủy', 'Bạn đã hủy đăng nhập với Google');
+        showWarning('Bạn đã hủy đăng nhập với Google');
       }
     } catch (error: any) {
       console.error('Google login error:', error);
-      Alert.alert('Lỗi', 'Không thể đăng nhập với Google: ' + error.message);
+      const errorMessage = parseErrorMessage(error);
+      showError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -70,27 +73,24 @@ export default function LoginScreen({ onSwitchToRegister }: LoginScreenProps) {
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
-      Alert.alert('Lỗi', 'Vui lòng nhập đầy đủ thông tin');
+      showWarning('Vui lòng nhập đầy đủ thông tin');
       return;
     }
 
     try {
       setIsLoading(true);
       await login(email.trim(), password);
-      Alert.alert('Thành công', 'Đăng nhập thành công!');
+      showSuccess('Đăng nhập thành công!');
     } catch (error: any) {
-      Alert.alert('Lỗi đăng nhập', error.message || 'Có lỗi xảy ra khi đăng nhập');
+      const errorMessage = parseErrorMessage(error);
+      showError(errorMessage);
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleForgotPassword = () => {
-    Alert.alert(
-      'Quên mật khẩu',
-      'Chức năng này sẽ được cập nhật trong phiên bản tiếp theo.',
-      [{ text: 'OK' }]
-    );
+    showInfo('Chức năng này sẽ được cập nhật trong phiên bản tiếp theo.');
   };
 
   return (

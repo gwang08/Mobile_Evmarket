@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  Alert,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
@@ -13,6 +12,8 @@ import {
   Linking,
 } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
+import { parseErrorMessage } from '../utils/errorHandler';
 
 interface RegisterScreenProps {
   onSwitchToLogin: () => void;
@@ -25,36 +26,37 @@ export default function RegisterScreen({ onSwitchToLogin }: RegisterScreenProps)
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { register } = useAuth();
+  const { showSuccess, showError, showWarning, showInfo } = useToast();
 
   const validateForm = () => {
     if (!name.trim()) {
-      Alert.alert('Lỗi', 'Vui lòng nhập họ tên');
+      showWarning('Vui lòng nhập họ tên');
       return false;
     }
 
     if (!email.trim()) {
-      Alert.alert('Lỗi', 'Vui lòng nhập email');
+      showWarning('Vui lòng nhập email');
       return false;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      Alert.alert('Lỗi', 'Email không hợp lệ');
+      showWarning('Email không hợp lệ');
       return false;
     }
 
     if (!password.trim()) {
-      Alert.alert('Lỗi', 'Vui lòng nhập mật khẩu');
+      showWarning('Vui lòng nhập mật khẩu');
       return false;
     }
 
     if (password.length < 8) {
-      Alert.alert('Lỗi', 'Mật khẩu phải có ít nhất 8 ký tự');
+      showWarning('Mật khẩu phải có ít nhất 8 ký tự');
       return false;
     }
 
     if (password !== confirmPassword) {
-      Alert.alert('Lỗi', 'Mật khẩu xác nhận không khớp');
+      showWarning('Mật khẩu xác nhận không khớp');
       return false;
     }
 
@@ -63,21 +65,12 @@ export default function RegisterScreen({ onSwitchToLogin }: RegisterScreenProps)
 
   const handleGoogleRegister = async () => {
     try {
-      Alert.alert(
-        'Đăng ký với Google',
-        'Chức năng này sẽ chuyển bạn đến trang đăng ký Google. Tiếp tục?',
-        [
-          { text: 'Hủy', style: 'cancel' },
-          { 
-            text: 'Tiếp tục', 
-            onPress: () => {
-              Linking.openURL('https://evmarket-api-staging.onrender.com/api/v1/auth/google');
-            }
-          }
-        ]
-      );
+      showInfo('Đang chuyển đến trang đăng ký Google...', 2000);
+      setTimeout(() => {
+        Linking.openURL('https://evmarket-api-staging.onrender.com/api/v1/auth/google');
+      }, 500);
     } catch (error) {
-      Alert.alert('Lỗi', 'Không thể mở trang đăng ký Google');
+      showError('Không thể mở trang đăng ký Google');
     }
   };
 
@@ -107,18 +100,13 @@ export default function RegisterScreen({ onSwitchToLogin }: RegisterScreenProps)
         throw new Error(data.message || 'Registration failed');
       }
 
-      Alert.alert(
-        'Đăng ký thành công!', 
-        'Tài khoản của bạn đã được tạo. Vui lòng đăng nhập để tiếp tục.',
-        [
-          {
-            text: 'Đăng nhập ngay',
-            onPress: () => onSwitchToLogin()
-          }
-        ]
-      );
+      showSuccess('Đăng ký thành công! Vui lòng đăng nhập để tiếp tục.', 4000);
+      setTimeout(() => {
+        onSwitchToLogin();
+      }, 2000);
     } catch (error: any) {
-      Alert.alert('Lỗi đăng ký', error.message || 'Có lỗi xảy ra khi đăng ký');
+      const errorMessage = parseErrorMessage(error);
+      showError(errorMessage);
     } finally {
       setIsLoading(false);
     }

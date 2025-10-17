@@ -6,7 +6,6 @@ import {
   ScrollView,
   TextInput,
   TouchableOpacity,
-  Alert,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
@@ -16,11 +15,14 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../navigation/RootNavigator';
 import { vehicleService, CreateVehicleRequest } from '../services/vehicleService';
 import { Ionicons } from '@expo/vector-icons';
+import { useToast } from '../contexts/ToastContext';
+import { parseErrorMessage } from '../utils/errorHandler';
 
 type CreateVehicleNavigationProp = StackNavigationProp<RootStackParamList>;
 
 export default function CreateVehicleScreen() {
   const navigation = useNavigation<CreateVehicleNavigationProp>();
+  const { showSuccess, showError, showWarning } = useToast();
   const [loading, setLoading] = useState(false);
   
   // Basic info
@@ -55,35 +57,35 @@ export default function CreateVehicleScreen() {
 
   const validateForm = () => {
     if (!title.trim()) {
-      Alert.alert('Lỗi', 'Vui lòng nhập tiêu đề');
+      showWarning('Vui lòng nhập tiêu đề');
       return false;
     }
     if (!description.trim()) {
-      Alert.alert('Lỗi', 'Vui lòng nhập mô tả');
+      showWarning('Vui lòng nhập mô tả');
       return false;
     }
     if (!price || isNaN(Number(price)) || Number(price) <= 0) {
-      Alert.alert('Lỗi', 'Vui lòng nhập giá hợp lệ');
+      showWarning('Vui lòng nhập giá hợp lệ');
       return false;
     }
     if (!brand.trim()) {
-      Alert.alert('Lỗi', 'Vui lòng nhập thương hiệu');
+      showWarning('Vui lòng nhập thương hiệu');
       return false;
     }
     if (!model.trim()) {
-      Alert.alert('Lỗi', 'Vui lòng nhập model');
+      showWarning('Vui lòng nhập model');
       return false;
     }
     if (!year || isNaN(Number(year)) || Number(year) < 1900 || Number(year) > new Date().getFullYear() + 1) {
-      Alert.alert('Lỗi', 'Vui lòng nhập năm sản xuất hợp lệ');
+      showWarning('Vui lòng nhập năm sản xuất hợp lệ');
       return false;
     }
     if (!mileage || isNaN(Number(mileage)) || Number(mileage) < 0) {
-      Alert.alert('Lỗi', 'Vui lòng nhập số km đã đi hợp lệ');
+      showWarning('Vui lòng nhập số km đã đi hợp lệ');
       return false;
     }
     if (!imageUrl.trim()) {
-      Alert.alert('Lỗi', 'Vui lòng nhập ít nhất một URL hình ảnh');
+      showWarning('Vui lòng nhập ít nhất một URL hình ảnh');
       return false;
     }
     return true;
@@ -131,18 +133,13 @@ export default function CreateVehicleScreen() {
     try {
       setLoading(true);
       await vehicleService.createVehicle(vehicleData);
-      Alert.alert(
-        'Thành công!',
-        'Xe của bạn đã được đăng bán thành công.',
-        [
-          {
-            text: 'OK',
-            onPress: () => navigation.goBack(),
-          },
-        ]
-      );
+      showSuccess('Xe của bạn đã được đăng bán thành công!');
+      setTimeout(() => {
+        navigation.goBack();
+      }, 2000);
     } catch (error: any) {
-      Alert.alert('Lỗi', error.message || 'Có lỗi xảy ra khi đăng bán xe');
+      const errorMessage = parseErrorMessage(error);
+      showError(errorMessage);
     } finally {
       setLoading(false);
     }

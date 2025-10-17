@@ -6,7 +6,6 @@ import {
   ScrollView,
   TextInput,
   TouchableOpacity,
-  Alert,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
@@ -16,11 +15,14 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../navigation/RootNavigator';
 import { batteryService, CreateBatteryRequest } from '../services/batteryService';
 import { Ionicons } from '@expo/vector-icons';
+import { useToast } from '../contexts/ToastContext';
+import { parseErrorMessage } from '../utils/errorHandler';
 
 type CreateBatteryNavigationProp = StackNavigationProp<RootStackParamList>;
 
 export default function CreateBatteryScreen() {
   const navigation = useNavigation<CreateBatteryNavigationProp>();
+  const { showSuccess, showError, showWarning } = useToast();
   const [loading, setLoading] = useState(false);
   
   // Basic info
@@ -45,35 +47,35 @@ export default function CreateBatteryScreen() {
 
   const validateForm = () => {
     if (!title.trim()) {
-      Alert.alert('Lỗi', 'Vui lòng nhập tiêu đề');
+      showWarning('Vui lòng nhập tiêu đề');
       return false;
     }
     if (!description.trim()) {
-      Alert.alert('Lỗi', 'Vui lòng nhập mô tả');
+      showWarning('Vui lòng nhập mô tả');
       return false;
     }
     if (!price || isNaN(Number(price)) || Number(price) <= 0) {
-      Alert.alert('Lỗi', 'Vui lòng nhập giá hợp lệ');
+      showWarning('Vui lòng nhập giá hợp lệ');
       return false;
     }
     if (!brand.trim()) {
-      Alert.alert('Lỗi', 'Vui lòng nhập thương hiệu');
+      showWarning('Vui lòng nhập thương hiệu');
       return false;
     }
     if (!capacity || isNaN(Number(capacity)) || Number(capacity) <= 0) {
-      Alert.alert('Lỗi', 'Vui lòng nhập dung lượng pin hợp lệ');
+      showWarning('Vui lòng nhập dung lượng pin hợp lệ');
       return false;
     }
     if (!year || isNaN(Number(year)) || Number(year) < 1900 || Number(year) > new Date().getFullYear() + 1) {
-      Alert.alert('Lỗi', 'Vui lòng nhập năm sản xuất hợp lệ');
+      showWarning('Vui lòng nhập năm sản xuất hợp lệ');
       return false;
     }
     if (!health || isNaN(Number(health)) || Number(health) < 0 || Number(health) > 100) {
-      Alert.alert('Lỗi', 'Vui lòng nhập mức độ sức khỏe pin hợp lệ (0-100%)');
+      showWarning('Vui lòng nhập mức độ sức khỏe pin hợp lệ (0-100%)');
       return false;
     }
     if (!imageUrl.trim()) {
-      Alert.alert('Lỗi', 'Vui lòng nhập ít nhất một URL hình ảnh');
+      showWarning('Vui lòng nhập ít nhất một URL hình ảnh');
       return false;
     }
     return true;
@@ -106,18 +108,13 @@ export default function CreateBatteryScreen() {
     try {
       setLoading(true);
       await batteryService.createBattery(batteryData);
-      Alert.alert(
-        'Thành công!',
-        'Pin của bạn đã được đăng bán thành công.',
-        [
-          {
-            text: 'OK',
-            onPress: () => navigation.goBack(),
-          },
-        ]
-      );
+      showSuccess('Pin của bạn đã được đăng bán thành công!');
+      setTimeout(() => {
+        navigation.goBack();
+      }, 2000);
     } catch (error: any) {
-      Alert.alert('Lỗi', error.message || 'Có lỗi xảy ra khi đăng bán pin');
+      const errorMessage = parseErrorMessage(error);
+      showError(errorMessage);
     } finally {
       setLoading(false);
     }

@@ -8,6 +8,7 @@ import { TabParamList } from '../navigation/TabNavigator';
 import { Battery } from '../types';
 import { batteryService } from '../services/batteryService';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
 import ImageGallery from '../components/ImageGallery';
 import BatterySpecifications from '../components/BatterySpecifications';
 import SellerInfo from '../components/SellerInfo';
@@ -26,6 +27,7 @@ export default function BatteryDetailScreen() {
   const [battery, setBattery] = useState<Battery | null>(null);
   const [loading, setLoading] = useState(true);
   const { isAuthenticated, setShowLoginPrompt } = useAuth();
+  const { showError, showInfo } = useToast();
 
   useEffect(() => {
     fetchBatteryDetail();
@@ -45,7 +47,7 @@ export default function BatteryDetailScreen() {
       setBattery(response.data.battery);
     } catch (error) {
       console.error('Error fetching battery detail:', error);
-      Alert.alert('Lỗi', 'Không thể tải thông tin pin. Vui lòng thử lại.');
+      showError('Không thể tải thông tin pin. Vui lòng thử lại.');
     } finally {
       setLoading(false);
     }
@@ -121,7 +123,7 @@ export default function BatteryDetailScreen() {
       return;
     }
 
-    Alert.alert('Thương lượng', `Gửi tin nhắn thương lượng cho ${battery?.seller?.name}`);
+    showInfo(`Gửi tin nhắn thương lượng cho ${battery?.seller?.name}`);
   };
 
   const getHealthColor = (health: number | null) => {

@@ -21,6 +21,8 @@ import { vehicleService } from '../services/vehicleService';
 import { batteryService } from '../services/batteryService';
 import { Vehicle, Battery } from '../types';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
+import { parseErrorMessage } from '../utils/errorHandler';
 
 type MyListingsNavigationProp = CompositeNavigationProp<
   StackNavigationProp<RootStackParamList, 'MyListings'>,
@@ -30,6 +32,7 @@ type MyListingsNavigationProp = CompositeNavigationProp<
 export default function MyListingsScreen() {
   const navigation = useNavigation<MyListingsNavigationProp>();
   const { user } = useAuth();
+  const { showSuccess, showError } = useToast();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [batteries, setBatteries] = useState<Battery[]>([]);
   const [filteredVehicles, setFilteredVehicles] = useState<Vehicle[]>([]);
@@ -74,7 +77,8 @@ export default function MyListingsScreen() {
       applyFilters(vehiclesResponse.data.vehicles, batteriesResponse.data.batteries);
     } catch (error) {
       console.error('Error loading my listings:', error);
-      Alert.alert('Lỗi', 'Không thể tải danh sách sản phẩm của bạn');
+      const errorMessage = parseErrorMessage(error);
+      showError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -120,6 +124,7 @@ export default function MyListingsScreen() {
   };
 
   const handleDelete = (type: 'vehicle' | 'battery', id: string, title: string) => {
+    // GIỮ Alert.alert cho confirm dialog (cần Yes/No buttons)
     Alert.alert(
       'Xác nhận xóa',
       `Bạn có chắc chắn muốn xóa "${title}"?`,
@@ -147,10 +152,11 @@ export default function MyListingsScreen() {
         setBatteries(updatedBatteries);
         applyFilters(vehicles, updatedBatteries);
       }
-      Alert.alert('Thành công', 'Đã xóa sản phẩm');
+      showSuccess('Đã xóa sản phẩm thành công');
     } catch (error) {
       console.error('Error deleting item:', error);
-      Alert.alert('Lỗi', 'Không thể xóa sản phẩm');
+      const errorMessage = parseErrorMessage(error);
+      showError(errorMessage);
     }
   };
 
@@ -298,7 +304,7 @@ export default function MyListingsScreen() {
           onPress={() => setActiveTab('vehicles')}
         >
           <Text style={[styles.tabText, activeTab === 'vehicles' && styles.activeTabText]}>
-            Xe điện ({filteredVehicles.length})
+            Xe điện 
           </Text>
         </TouchableOpacity>
         <TouchableOpacity

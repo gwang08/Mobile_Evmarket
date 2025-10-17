@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   Image,
   ActivityIndicator,
-  Alert,
   SafeAreaView,
   Linking,
 } from 'react-native';
@@ -19,6 +18,8 @@ import { vehicleService } from '../services/vehicleService';
 import { batteryService } from '../services/batteryService';
 import { checkoutService } from '../services/checkoutService';
 import PaymentMethod from '../components/PaymentMethod';
+import { useToast } from '../contexts/ToastContext';
+import { parseErrorMessage } from '../utils/errorHandler';
 
 type CheckoutScreenRouteProp = RouteProp<RootStackParamList, 'Checkout'>;
 type CheckoutScreenNavigationProp = StackNavigationProp<RootStackParamList>;
@@ -27,6 +28,7 @@ export default function CheckoutScreen() {
   const route = useRoute<CheckoutScreenRouteProp>();
   const navigation = useNavigation<CheckoutScreenNavigationProp>();
   const { productId, productType } = route.params;
+  const { showSuccess, showError, showWarning, showInfo } = useToast();
 
   const [product, setProduct] = useState<Vehicle | Battery | null>(null);
   const [loading, setLoading] = useState(true);
@@ -47,13 +49,11 @@ export default function CheckoutScreen() {
         
         // Check if product is not available
         if (vehicle.status !== 'AVAILABLE') {
-          Alert.alert(
-            'Sản phẩm không khả dụng',
-            vehicle.status === 'SOLD' 
-              ? 'Sản phẩm này đã được bán. Vui lòng chọn sản phẩm khác.'
-              : 'Sản phẩm này không còn khả dụng.',
-            [{ text: 'OK', onPress: () => navigation.goBack() }]
-          );
+          const message = vehicle.status === 'SOLD' 
+            ? 'Sản phẩm này đã được bán. Vui lòng chọn sản phẩm khác.'
+            : 'Sản phẩm này không còn khả dụng.';
+          showError(message);
+          setTimeout(() => navigation.goBack(), 2000);
           return;
         }
       } else {
@@ -63,20 +63,19 @@ export default function CheckoutScreen() {
         
         // Check if product is not available
         if (battery.status !== 'AVAILABLE') {
-          Alert.alert(
-            'Sản phẩm không khả dụng',
-            battery.status === 'SOLD' 
-              ? 'Sản phẩm này đã được bán. Vui lòng chọn sản phẩm khác.'
-              : 'Sản phẩm này không còn khả dụng.',
-            [{ text: 'OK', onPress: () => navigation.goBack() }]
-          );
+          const message = battery.status === 'SOLD' 
+            ? 'Sản phẩm này đã được bán. Vui lòng chọn sản phẩm khác.'
+            : 'Sản phẩm này không còn khả dụng.';
+          showError(message);
+          setTimeout(() => navigation.goBack(), 2000);
           return;
         }
       }
     } catch (error) {
       console.error('Error fetching product detail:', error);
-      Alert.alert('Lỗi', 'Không thể tải thông tin sản phẩm');
-      navigation.goBack();
+      const errorMessage = parseErrorMessage(error);
+      showError(errorMessage);
+      setTimeout(() => navigation.goBack(), 2000);
     } finally {
       setLoading(false);
     }
@@ -91,12 +90,12 @@ export default function CheckoutScreen() {
 
   const handlePayment = async () => {
     if (!selectedPaymentMethod) {
-      Alert.alert('Thông báo', 'Vui lòng chọn phương thức thanh toán');
+      showWarning('Vui lòng chọn phương thức thanh toán');
       return;
     }
 
     if (!product) {
-      Alert.alert('Lỗi', 'Không tìm thấy thông tin sản phẩm');
+      showError('Không tìm thấy thông tin sản phẩm');
       return;
     }
 
@@ -119,20 +118,13 @@ export default function CheckoutScreen() {
         if (canOpen) {
           await Linking.openURL(deeplink);
           
-          // Show instruction
-          Alert.alert(
-            'Đang chuyển đến MoMo',
-            'Vui lòng hoàn tất thanh toán trên ứng dụng MoMo. Sau khi thanh toán, quay lại ứng dụng để kiểm tra trạng thái đơn hàng.',
-            [
-              {
-                text: 'OK',
-                onPress: () => {
-                  // Navigate to transaction history or home
-                  navigation.navigate('Main');
-                }
-              }
-            ]
-          );
+          // Show instruction with toast
+          showInfo('Vui lòng hoàn tất thanh toán trên ứng dụng MoMo. Sau khi thanh toán, quay lại ứng dụng để kiểm tra trạng thái đơn hàng.', 5000);
+          
+          // Navigate to home after a short delay
+          setTimeout(() => {
+            navigation.navigate('Main');
+          }, 1500);
         } else {
           // Fallback to web URL if can't open MoMo app
           await Linking.openURL(payUrl);
@@ -148,34 +140,17 @@ export default function CheckoutScreen() {
         const paymentResult = await checkoutService.payWithWallet(transactionId);
         
         // Payment successful, transaction is now COMPLETED
-        Alert.alert(
-          'Thanh toán thành công!',
-          `Đã thanh toán ${formatPrice(product.price)} từ ví EVmarket.\n\nGiao dịch đã hoàn tất. Bạn có thể xem lại trong lịch sử mua hàng.`,
-          [
-            {
-              text: 'Xem lịch sử',
-              onPress: () => {
-                navigation.goBack(); // Go back to product detail first
-                setTimeout(() => {
-                  navigation.navigate('TransactionHistory');
-                }, 100);
-              },
-            },
-            {
-              text: 'OK',
-              onPress: () => {
-                // Go back to product detail, which will now show SOLD status
-                navigation.goBack();
-              },
-              style: 'cancel'
-            }
-          ]
-        );
+        showSuccess(`Thanh toán thành công ${formatPrice(product.price)} từ ví EVmarket!`, 4000);
+        
+        // Navigate back to show SOLD status
+        setTimeout(() => {
+          navigation.goBack();
+        }, 2000);
       }
     } catch (error: any) {
       console.error('Error processing checkout:', error);
-      const errorMessage = error.response?.data?.message || 'Không thể xử lý thanh toán. Vui lòng thử lại.';
-      Alert.alert('Lỗi', errorMessage);
+      const errorMessage = parseErrorMessage(error);
+      showError(errorMessage, 4000);
     } finally {
       setProcessing(false);
     }

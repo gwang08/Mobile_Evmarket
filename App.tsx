@@ -2,12 +2,15 @@ import React, { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { Linking, Alert } from 'react-native';
+import { Linking } from 'react-native';
 
 import RootNavigator from './navigation/RootNavigator';
 import { AuthProvider } from './contexts/AuthContext';
+import { ToastProvider, useToast } from './contexts/ToastContext';
 
-export default function App() {
+function AppContent() {
+  const { showSuccess, showError, showWarning } = useToast();
+
   useEffect(() => {
     // Handle deep link when app is already running
     const handleDeepLink = (url: string) => {
@@ -19,23 +22,11 @@ export default function App() {
         const orderId = urlObj.searchParams.get('orderId');
         
         if (status === 'success') {
-          Alert.alert(
-            'Thanh toán thành công!',
-            'Tiền đã được nạp vào ví của bạn.',
-            [{ text: 'OK' }]
-          );
+          showSuccess('Thanh toán thành công! Tiền đã được nạp vào ví của bạn.');
         } else if (status === 'cancel') {
-          Alert.alert(
-            'Đã hủy thanh toán',
-            'Bạn đã hủy quá trình thanh toán.',
-            [{ text: 'OK' }]
-          );
+          showWarning('Bạn đã hủy quá trình thanh toán.');
         } else if (status === 'fail') {
-          Alert.alert(
-            'Thanh toán thất bại',
-            'Có lỗi xảy ra trong quá trình thanh toán. Vui lòng thử lại.',
-            [{ text: 'OK' }]
-          );
+          showError('Thanh toán thất bại. Vui lòng thử lại.');
         }
       }
     };
@@ -61,13 +52,22 @@ export default function App() {
   }, []);
 
   return (
+    <NavigationContainer>
+      <RootNavigator />
+      <StatusBar style="auto" />
+    </NavigationContainer>
+  );
+}
+
+export default function App() {
+
+  return (
     <SafeAreaProvider>
-      <AuthProvider>
-        <NavigationContainer>
-          <RootNavigator />
-          <StatusBar style="auto" />
-        </NavigationContainer>
-      </AuthProvider>
+      <ToastProvider>
+        <AuthProvider>
+          <AppContent />
+        </AuthProvider>
+      </ToastProvider>
     </SafeAreaProvider>
   );
 }

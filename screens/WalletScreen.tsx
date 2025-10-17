@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  Alert,
   ActivityIndicator,
   TouchableOpacity,
   TextInput,
@@ -16,8 +15,10 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { walletService } from '../services/walletService';
 import { Wallet, WalletTransaction } from '../types';
+import { useToast } from '../contexts/ToastContext';
 
 const WalletScreen: React.FC = () => {
+  const { showError } = useToast();
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -67,7 +68,7 @@ const WalletScreen: React.FC = () => {
       setTransactions(historyResponse.data.transactions);
     } catch (error) {
       console.error('Error loading wallet:', error);
-      Alert.alert('Lỗi', 'Không thể tải thông tin ví');
+      showError('Không thể tải thông tin ví');
     } finally {
       setLoading(false);
     }
@@ -90,12 +91,12 @@ const WalletScreen: React.FC = () => {
     const amount = parseInt(depositAmount.replace(/[^0-9]/g, ''));
     
     if (!amount || amount < 10000) {
-      Alert.alert('Lỗi', 'Số tiền nạp tối thiểu là 10,000 VND');
+      showError('Số tiền nạp tối thiểu là 10,000 VND');
       return;
     }
 
     if (amount > 50000000) {
-      Alert.alert('Lỗi', 'Số tiền nạp tối đa là 50,000,000 VND');
+      showError('Số tiền nạp tối đa là 50,000,000 VND');
       return;
     }
 
@@ -127,7 +128,7 @@ const WalletScreen: React.FC = () => {
         try {
           await Linking.openURL(payUrl);
         } catch (e) {
-          Alert.alert('Lỗi', 'Không thể mở trang thanh toán. Vui lòng thử lại sau.');
+          showError('Không thể mở trang thanh toán. Vui lòng thử lại sau.');
         }
       }
 
@@ -135,7 +136,7 @@ const WalletScreen: React.FC = () => {
       setDepositAmount('');
     } catch (error) {
       console.error('Error creating deposit:', error);
-      Alert.alert('Lỗi', 'Không thể tạo yêu cầu nạp tiền');
+      showError('Không thể tạo yêu cầu nạp tiền');
     } finally {
       setDepositing(false);
     }
