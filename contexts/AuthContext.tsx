@@ -12,6 +12,7 @@ interface AuthContextType {
   register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshToken: () => Promise<void>;
+  reloadAuthStatus: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -155,6 +156,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
+  const reloadAuthStatus = async () => {
+    await checkAuthStatus();
+  };
+
   const value: AuthContextType = {
     user,
     isLoading,
@@ -165,6 +170,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     register,
     logout,
     refreshToken,
+    reloadAuthStatus,
   };
 
   return (

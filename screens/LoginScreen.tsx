@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import * as AuthSession from 'expo-auth-session';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { parseErrorMessage } from '../utils/errorHandler';
@@ -27,43 +28,81 @@ export default function LoginScreen({ onSwitchToRegister }: LoginScreenProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, reloadAuthStatus } = useAuth();
   const { showSuccess, showError, showWarning, showInfo } = useToast();
 
   const handleGoogleLogin = async () => {
     try {
       setIsLoading(true);
       
-      // Open Google OAuth in WebBrowser (in-app browser)
+      
+      // Step 1: Open Google OAuth in WebBrowser to get code
       const result = await WebBrowser.openAuthSessionAsync(
-        'https://evmarket-api-staging.onrender.com/api/v1/auth/google',
+        'https://evmarket-api-staging.onrender.com/api/v1/auth/google?client_type=mobile',
         'evmarket://auth-callback'
       );
 
+
       if (result.type === 'success') {
-        // Parse the callback URL to get the token
+        // Parse the callback URL to get the code
         const url = result.url;
         
-        // Extract token from URL (adjust based on your backend response)
-        // Example: callback?token=xxx&user=xxx
-        const params = new URLSearchParams(url.split('?')[1]);
-        const token = params.get('token');
-        const userStr = params.get('user');
+        // Extract code from URL
+        // Example: evmarket://auth-callback?code=xxx
+        const urlParts = url.split('?');
         
-        if (token && userStr) {
-          const user = JSON.parse(decodeURIComponent(userStr));
+        if (urlParts.length < 2) {
+          showError('Không tìm thấy mã xác thực trong callback URL');
+          return;
+        }
+        
+        const params = new URLSearchParams(urlParts[1]);
+        const code = params.get('code');
+        
+        // Clean the code - remove any fragment identifier (#) or trailing characters
+        const cleanCode = code?.replace(/#.*$/, '').trim();
+        
+      
+        
+        if (cleanCode) {
           
-          // Save to auth context (you might need to add this method)
-          await login(user.email, token);
+          // Step 2: Exchange code for token
+          const response = await fetch(
+            'https://evmarket-api-staging.onrender.com/api/v1/auth/exchange-code',
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ code: cleanCode }),
+            }
+          );
+
+          
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(data.message || 'Failed to exchange code for token');
+          }
+
+          // Save token and user data
+          await AsyncStorage.setItem('accessToken', data.data.accessToken);
+          await AsyncStorage.setItem('user', JSON.stringify(data.data.user));
+          
+          // Reload auth context to update user state
+          await reloadAuthStatus();
+          
           showSuccess('Đăng nhập với Google thành công!');
         } else {
-          showError('Không thể lấy thông tin đăng nhập từ Google');
+          console.error('🔴 No code found in callback URL');
+          showError('Không thể lấy mã xác thực từ Google');
         }
       } else if (result.type === 'cancel') {
         showWarning('Bạn đã hủy đăng nhập với Google');
+      } else {
       }
     } catch (error: any) {
-      console.error('Google login error:', error);
+    
       const errorMessage = parseErrorMessage(error);
       showError(errorMessage);
     } finally {
