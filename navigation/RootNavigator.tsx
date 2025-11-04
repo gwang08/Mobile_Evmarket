@@ -70,7 +70,7 @@ export default function RootNavigator() {
         name="VehicleDetail" 
         component={VehicleDetailScreen}
         options={{ 
-          title: 'Trở về',
+          title: 'Chi tiết xe',
         }}
       />
       <Stack.Screen 

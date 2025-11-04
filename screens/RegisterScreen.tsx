@@ -14,6 +14,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { parseErrorMessage } from '../utils/errorHandler';
+import { authService } from '../services/authService';
 
 interface RegisterScreenProps {
   onSwitchToLogin: () => void;
@@ -67,7 +68,8 @@ export default function RegisterScreen({ onSwitchToLogin }: RegisterScreenProps)
     try {
       showInfo('Đang chuyển đến trang đăng ký Google...', 2000);
       setTimeout(() => {
-        Linking.openURL('https://evmarket-api-staging.onrender.com/api/v1/auth/google');
+        const googleAuthUrl = authService.getGoogleAuthUrl('mobile');
+        Linking.openURL(googleAuthUrl);
       }, 500);
     } catch (error) {
       showError('Không thể mở trang đăng ký Google');
@@ -81,24 +83,12 @@ export default function RegisterScreen({ onSwitchToLogin }: RegisterScreenProps)
 
     try {
       setIsLoading(true);
-      // Gọi API đăng ký nhưng không tự động đăng nhập
-      const response = await fetch('https://evmarket-api-staging.onrender.com/api/v1/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          name: name.trim(), 
-          email: email.trim(), 
-          password 
-        }),
+      // Gọi authService để đăng ký
+      const data = await authService.register({ 
+        name: name.trim(), 
+        email: email.trim(), 
+        password 
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Registration failed');
-      }
 
       showSuccess('Đăng ký thành công! Vui lòng đăng nhập để tiếp tục.', 4000);
       setTimeout(() => {

@@ -180,6 +180,7 @@ export interface WalletResponse {
 
 export interface DepositRequest {
   amount: number;
+  redirectUrl?: string; // Optional redirect URL for MoMo payment
 }
 
 export interface DepositResponse {
@@ -228,6 +229,7 @@ export interface CheckoutRequest {
   listingId: string;
   listingType: 'VEHICLE' | 'BATTERY';
   paymentMethod: 'MOMO' | 'WALLET';
+  redirectUrl?: string; // Optional redirect URL for MoMo payment
 }
 
 export interface MoMoPaymentInfo {

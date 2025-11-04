@@ -16,6 +16,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { parseErrorMessage } from '../utils/errorHandler';
+import { authService } from '../services/authService';
 
 // Complete the auth session for Google Sign-In
 WebBrowser.maybeCompleteAuthSession();
@@ -35,13 +36,12 @@ export default function LoginScreen({ onSwitchToRegister }: LoginScreenProps) {
     try {
       setIsLoading(true);
       
-      
       // Step 1: Open Google OAuth in WebBrowser to get code
+      const googleAuthUrl = authService.getGoogleAuthUrl('mobile');
       const result = await WebBrowser.openAuthSessionAsync(
-        'https://evmarket-api-staging.onrender.com/api/v1/auth/google?client_type=mobile',
+        googleAuthUrl,
         'evmarket://auth-callback'
       );
-
 
       if (result.type === 'success') {
         // Parse the callback URL to get the code
@@ -62,28 +62,9 @@ export default function LoginScreen({ onSwitchToRegister }: LoginScreenProps) {
         // Clean the code - remove any fragment identifier (#) or trailing characters
         const cleanCode = code?.replace(/#.*$/, '').trim();
         
-      
-        
         if (cleanCode) {
-          
-          // Step 2: Exchange code for token
-          const response = await fetch(
-            'https://evmarket-api-staging.onrender.com/api/v1/auth/exchange-code',
-            {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ code: cleanCode }),
-            }
-          );
-
-          
-          const data = await response.json();
-
-          if (!response.ok) {
-            throw new Error(data.message || 'Failed to exchange code for token');
-          }
+          // Step 2: Exchange code for token using authService
+          const data = await authService.exchangeGoogleCode(cleanCode);
 
           // Save token and user data
           await AsyncStorage.setItem('accessToken', data.data.accessToken);
@@ -99,10 +80,8 @@ export default function LoginScreen({ onSwitchToRegister }: LoginScreenProps) {
         }
       } else if (result.type === 'cancel') {
         showWarning('Bạn đã hủy đăng nhập với Google');
-      } else {
       }
     } catch (error: any) {
-    
       const errorMessage = parseErrorMessage(error);
       showError(errorMessage);
     } finally {

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { User } from '../types';
+import { authService } from '../services/authService';
 
 interface AuthContextType {
   user: User | null;
@@ -50,23 +51,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const login = async (email: string, password: string) => {
     try {
       setIsLoading(true);
-      const response = await fetch('https://evmarket-api-staging.onrender.com/api/v1/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
+      const response = await authService.login({ email, password });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Login failed');
-      }
-
-      await AsyncStorage.setItem('accessToken', data.data.accessToken);
-      await AsyncStorage.setItem('user', JSON.stringify(data.data.user));
-      setUser(data.data.user);
+      await AsyncStorage.setItem('accessToken', response.data.accessToken);
+      await AsyncStorage.setItem('user', JSON.stringify(response.data.user));
+      setUser(response.data.user);
     } catch (error) {
       console.error('Login error:', error);
       throw error;
@@ -78,23 +67,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const register = async (name: string, email: string, password: string) => {
     try {
       setIsLoading(true);
-      const response = await fetch('https://evmarket-api-staging.onrender.com/api/v1/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ name, email, password }),
-      });
+      const response = await authService.register({ name, email, password });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Registration failed');
-      }
-
-      await AsyncStorage.setItem('accessToken', data.data.accessToken);
-      await AsyncStorage.setItem('user', JSON.stringify(data.data.user));
-      setUser(data.data.user);
+      await AsyncStorage.setItem('accessToken', response.data.accessToken);
+      await AsyncStorage.setItem('user', JSON.stringify(response.data.user));
+      setUser(response.data.user);
     } catch (error) {
       console.error('Registration error:', error);
       throw error;
@@ -109,12 +86,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const token = await AsyncStorage.getItem('accessToken');
       
       if (token) {
-        await fetch('https://evmarket-api-staging.onrender.com/api/v1/auth/logout', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        });
+        await authService.logout();
       }
 
       await AsyncStorage.removeItem('accessToken');
@@ -135,20 +107,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
         throw new Error('No refresh token available');
       }
 
-      const response = await fetch('https://evmarket-api-staging.onrender.com/api/v1/auth/refresh-token', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Token refresh failed');
-      }
-
-      await AsyncStorage.setItem('accessToken', data.data.accessToken);
+      const response = await authService.refreshToken();
+      await AsyncStorage.setItem('accessToken', response.data.accessToken);
     } catch (error) {
       console.error('Token refresh error:', error);
       // If refresh fails, logout user
