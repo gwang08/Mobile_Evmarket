@@ -7,8 +7,11 @@ export const walletService = {
     return response.data;
   },
 
-  async depositToWallet(amount: number): Promise<DepositResponse> {
-    const depositData: DepositRequest = { amount };
+  async depositToWallet(amount: number, redirectUrl?: string): Promise<DepositResponse> {
+    const depositData: DepositRequest = { 
+      amount,
+      ...(redirectUrl && { redirectUrl }) // Add redirectUrl if provided
+    };
     const response = await apiClient.post<DepositResponse>('/wallet/deposit', depositData);
     return response.data;
   },

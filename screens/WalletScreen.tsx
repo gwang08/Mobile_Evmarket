@@ -102,32 +102,53 @@ const WalletScreen: React.FC = () => {
 
     try {
       setDepositing(true);
-      const response = await walletService.depositToWallet(amount);
+      // Add redirectUrl for MoMo to redirect back to app after payment
+      const response = await walletService.depositToWallet(amount, 'evmarket://payment');
 
       const { payUrl, deeplink, deeplinkMiniApp, qrCodeUrl } = response.data || {};
 
-      // Prefer app deeplink -> miniapp deeplink -> qrCode -> web payUrl
-      const tryUrls = [deeplink, deeplinkMiniApp, qrCodeUrl, payUrl].filter(Boolean) as string[];
+      // Try to open MoMo app using deeplink (don't check canOpenURL, just try)
       let opened = false;
-
-      for (const url of tryUrls) {
+      
+      if (deeplink) {
         try {
-          const supported = await Linking.canOpenURL(url);
-          if (supported) {
-            await Linking.openURL(url);
-            opened = true;
-            break;
-          }
-        } catch (e) {
-          console.warn('Failed to open URL', url, e);
+          await Linking.openURL(deeplink);
+          opened = true;
+          console.log('✅ Opened MoMo app via deeplink');
+        } catch (error) {
+          console.warn('❌ Failed to open deeplink:', error);
         }
       }
-
+      
+      // Fallback to QR code deeplink
+      if (!opened && qrCodeUrl) {
+        try {
+          await Linking.openURL(qrCodeUrl);
+          opened = true;
+          console.log('✅ Opened MoMo app via QR deeplink');
+        } catch (error) {
+          console.warn('❌ Failed to open QR deeplink:', error);
+        }
+      }
+      
+      // Fallback to MiniApp deeplink
+      if (!opened && deeplinkMiniApp) {
+        try {
+          await Linking.openURL(deeplinkMiniApp);
+          opened = true;
+          console.log('✅ Opened MoMo app via miniapp deeplink');
+        } catch (error) {
+          console.warn('❌ Failed to open miniapp deeplink:', error);
+        }
+      }
+      
+      // Last resort: open web payment page
       if (!opened && payUrl) {
-        // last resort: try to open payUrl directly
         try {
           await Linking.openURL(payUrl);
-        } catch (e) {
+          console.log('✅ Opened MoMo web payment page');
+        } catch (error) {
+          console.error('❌ Failed to open payment URL:', error);
           showError('Không thể mở trang thanh toán. Vui lòng thử lại sau.');
         }
       }

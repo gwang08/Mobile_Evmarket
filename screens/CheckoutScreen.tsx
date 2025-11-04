@@ -106,29 +106,78 @@ export default function CheckoutScreen() {
         listingId: productId,
         listingType: productType === 'vehicle' ? 'VEHICLE' as const : 'BATTERY' as const,
         paymentMethod: selectedPaymentMethod,
+        // Add redirectUrl for MoMo to redirect back to app after payment
+        ...(selectedPaymentMethod === 'MOMO' && {
+          redirectUrl: 'evmarket://checkout-callback'
+        })
       };
 
       const response = await checkoutService.initiateCheckout(checkoutData);
 
       if (selectedPaymentMethod === 'MOMO' && response.data.paymentInfo) {
         // Open MoMo app using deeplink
-        const { deeplink, payUrl } = response.data.paymentInfo;
+        const { deeplink, payUrl, qrCodeUrl, deeplinkMiniApp } = response.data.paymentInfo;
         
-        const canOpen = await Linking.canOpenURL(deeplink);
-        if (canOpen) {
-          await Linking.openURL(deeplink);
-          
-          // Show instruction with toast
-          showInfo('Vui lòng hoàn tất thanh toán trên ứng dụng MoMo. Sau khi thanh toán, quay lại ứng dụng để kiểm tra trạng thái đơn hàng.', 5000);
-          
-          // Navigate to home after a short delay
-          setTimeout(() => {
-            navigation.navigate('Main');
-          }, 1500);
-        } else {
-          // Fallback to web URL if can't open MoMo app
-          await Linking.openURL(payUrl);
+        // Try to open MoMo app (don't check canOpenURL, just try)
+        let opened = false;
+        
+        // 1. Try app deeplink first
+        if (deeplink) {
+          try {
+            await Linking.openURL(deeplink);
+            opened = true;
+            console.log('✅ Opened MoMo app via deeplink');
+          } catch (error) {
+            console.warn('❌ Failed to open deeplink:', error);
+          }
         }
+        
+        // 2. Fallback to QR code deeplink
+        if (!opened && qrCodeUrl) {
+          try {
+            await Linking.openURL(qrCodeUrl);
+            opened = true;
+            console.log('✅ Opened MoMo app via QR deeplink');
+          } catch (error) {
+            console.warn('❌ Failed to open QR deeplink:', error);
+          }
+        }
+        
+        // 3. Fallback to MiniApp deeplink
+        if (!opened && deeplinkMiniApp) {
+          try {
+            await Linking.openURL(deeplinkMiniApp);
+            opened = true;
+            console.log('✅ Opened MoMo app via miniapp deeplink');
+          } catch (error) {
+            console.warn('❌ Failed to open miniapp deeplink:', error);
+          }
+        }
+        
+        // 4. Last resort: open web payment page
+        if (!opened && payUrl) {
+          try {
+            await Linking.openURL(payUrl);
+            console.log('✅ Opened MoMo web payment page');
+          } catch (error) {
+            console.error('❌ Failed to open payment URL:', error);
+            showError('Không thể mở trang thanh toán. Vui lòng thử lại.');
+            return;
+          }
+        }
+        
+        if (!opened) {
+          showError('Không thể mở ứng dụng MoMo. Vui lòng kiểm tra và thử lại.');
+          return;
+        }
+        
+        // Show instruction - MoMo will redirect back to app after payment
+        showInfo('Vui lòng hoàn tất thanh toán trên MoMo. App sẽ tự động cập nhật khi thanh toán thành công.', 5000);
+        
+        // Navigate back to product detail to see updated status
+        setTimeout(() => {
+          navigation.goBack();
+        }, 2000);
       } else if (selectedPaymentMethod === 'WALLET') {
         // Wallet payment requires 2 steps:
         // 1. Initiate checkout (already done above - creates PENDING transaction)
