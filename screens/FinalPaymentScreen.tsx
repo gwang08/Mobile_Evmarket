@@ -18,9 +18,9 @@ import { vehicleService } from "../services/vehicleService";
 import { batteryService } from "../services/batteryService";
 import { checkoutService } from "../services/checkoutService";
 import PaymentMethod from "../components/PaymentMethod";
-import { useToast } from '../contexts/ToastContext';
-import { parseErrorMessage } from '../utils/errorHandler';
-import { Ionicons } from '@expo/vector-icons';
+import { useToast } from "../contexts/ToastContext";
+import { parseErrorMessage } from "../utils/errorHandler";
+import { Ionicons } from "@expo/vector-icons";
 
 type FinalPaymentRouteProp = RouteProp<RootStackParamList, "FinalPayment">;
 type FinalPaymentNavigationProp = StackNavigationProp<RootStackParamList>;
@@ -256,11 +256,15 @@ export default function FinalPaymentScreen() {
           <View style={styles.noteBox}>
             <View style={styles.noteRow}>
               <Ionicons name="checkmark-circle" size={20} color="#27ae60" />
-              <Text style={styles.noteText}>Bạn đã kiểm tra và chấp nhận sản phẩm.</Text>
+              <Text style={styles.noteText}>
+                Bạn đã kiểm tra và chấp nhận sản phẩm.
+              </Text>
             </View>
             <View style={styles.noteRow}>
               <Ionicons name="cash-outline" size={20} color="#3498db" />
-              <Text style={styles.noteText}>Thanh toán 90% còn lại để hoàn tất giao dịch.</Text>
+              <Text style={styles.noteText}>
+                Thanh toán 90% còn lại để hoàn tất giao dịch.
+              </Text>
             </View>
           </View>
         </View>

@@ -42,7 +42,7 @@ export default function ProposeDateModal({
 
   const handleDateChange = (event: any, selectedDate?: Date) => {
     // Handle Android dismiss
-    if (event?.type === 'dismissed') {
+    if (event?.type === "dismissed") {
       setShowPicker(false);
       setCurrentDateIndex(null);
       return;
@@ -55,7 +55,7 @@ export default function ProposeDateModal({
     if (selectedDate && currentDateIndex !== null) {
       // Set time to 00:01
       selectedDate.setHours(0, 1, 0, 0);
-      
+
       const newDates = [...selectedDates];
       newDates[currentDateIndex] = selectedDate;
       setSelectedDates(newDates);
@@ -119,8 +119,9 @@ export default function ProposeDateModal({
 
           <ScrollView style={styles.content}>
             <Text style={styles.instruction}>
-              Vui lòng chọn 3 ngày bạn có thể gặp (từ ngày mai đến ngày thứ 7 sau khi đặt cọc). Bên còn lại sẽ chọn 1
-              trong 3 ngày hoặc đề xuất ngày khác.
+              Vui lòng chọn 3 ngày bạn có thể gặp (từ ngày mai đến ngày thứ 7
+              sau khi đặt cọc). Bên còn lại sẽ chọn 1 trong 3 ngày hoặc đề xuất
+              ngày khác.
             </Text>
 
             {selectedDates.map((date, index) => (

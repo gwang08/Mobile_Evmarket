@@ -178,10 +178,10 @@ export default function AppointmentDetailScreen() {
                 { backgroundColor: role === "buyer" ? "#3498db" : "#e67e22" },
               ]}
             >
-              <Ionicons 
-                name={role === "buyer" ? "person" : "storefront"} 
-                size={16} 
-                color="white" 
+              <Ionicons
+                name={role === "buyer" ? "person" : "storefront"}
+                size={16}
+                color="white"
               />
               <Text style={styles.roleText}>
                 {role === "buyer" ? "Bạn là người mua" : "Bạn là người bán"}
