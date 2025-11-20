@@ -50,7 +50,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const login = async (email: string, password: string) => {
     try {
       setIsLoading(true);
-      const response = await fetch('https://evmarket-api-staging.onrender.com/api/v1/auth/login', {
+      const response = await fetch('https://evmarket-api-staging-backup.onrender.com/api/v1/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -78,7 +78,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const register = async (name: string, email: string, password: string) => {
     try {
       setIsLoading(true);
-      const response = await fetch('https://evmarket-api-staging.onrender.com/api/v1/auth/register', {
+      const response = await fetch('https://evmarket-api-staging-backup.onrender.com/api/v1/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -109,7 +109,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const token = await AsyncStorage.getItem('accessToken');
       
       if (token) {
-        await fetch('https://evmarket-api-staging.onrender.com/api/v1/auth/logout', {
+        await fetch('https://evmarket-api-staging-backup.onrender.com/api/v1/auth/logout', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -135,7 +135,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         throw new Error('No refresh token available');
       }
 
-      const response = await fetch('https://evmarket-api-staging.onrender.com/api/v1/auth/refresh-token', {
+      const response = await fetch('https://evmarket-api-staging-backup.onrender.com/api/v1/auth/refresh-token', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

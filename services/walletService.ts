@@ -8,7 +8,10 @@ export const walletService = {
   },
 
   async depositToWallet(amount: number): Promise<DepositResponse> {
-    const depositData: DepositRequest = { amount };
+    const depositData: DepositRequest = { 
+      amount,
+      redirectUrl: 'evmarket://wallet' // Deep link for mobile app
+    };
     const response = await apiClient.post<DepositResponse>('/wallet/deposit', depositData);
     return response.data;
   },

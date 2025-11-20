@@ -67,7 +67,7 @@ export default function RegisterScreen({ onSwitchToLogin }: RegisterScreenProps)
     try {
       showInfo('Đang chuyển đến trang đăng ký Google...', 2000);
       setTimeout(() => {
-        Linking.openURL('https://evmarket-api-staging.onrender.com/api/v1/auth/google');
+        Linking.openURL('https://evmarket-api-staging-backup.onrender.com/api/v1/auth/google');
       }, 500);
     } catch (error) {
       showError('Không thể mở trang đăng ký Google');
@@ -82,7 +82,7 @@ export default function RegisterScreen({ onSwitchToLogin }: RegisterScreenProps)
     try {
       setIsLoading(true);
       // Gọi API đăng ký nhưng không tự động đăng nhập
-      const response = await fetch('https://evmarket-api-staging.onrender.com/api/v1/auth/register', {
+      const response = await fetch('https://evmarket-api-staging-backup.onrender.com/api/v1/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

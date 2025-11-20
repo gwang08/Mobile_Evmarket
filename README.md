@@ -59,7 +59,7 @@
 Hiện tại base URL được hardcode trong `config/api.ts`:
 
 ```text
-https://evmarket-api-staging.onrender.com/api/v1
+https://evmarket-api-staging-backup.onrender.com/api/v1
 ```
 
 Bạn có thể chuyển sang dùng biến môi trường bằng cách:
@@ -68,7 +68,7 @@ Bạn có thể chuyển sang dùng biến môi trường bằng cách:
 2. Tạo file `.env`:
 
 ```env
-API_BASE_URL=https://evmarket-api-staging.onrender.com/api/v1
+API_BASE_URL=https://evmarket-api-staging-backup.onrender.com/api/v1
 ```
 
 3. Điều chỉnh `config/api.ts` để đọc từ env.

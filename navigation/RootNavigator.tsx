@@ -10,6 +10,9 @@ import CreateBatteryScreen from '../screens/CreateBatteryScreen';
 import MyListingsScreen from '../screens/MyListingsScreen';
 import TransactionHistoryScreen from '../screens/TransactionHistoryScreen';
 import ChatbotScreen from '../screens/ChatbotScreen';
+import AuctionDetailScreen from '../screens/AuctionDetailScreen';
+import CreateAuctionScreen from '../screens/CreateAuctionScreen';
+import WalletScreen from '../screens/WalletScreen';
 
 export type RootStackParamList = {
   Main: { screen?: keyof TabParamList } | undefined;
@@ -22,6 +25,9 @@ export type RootStackParamList = {
   MyListings: undefined;
   TransactionHistory: undefined;
   Chatbot: undefined;
+  AuctionDetail: { listingId: string; listingType: 'VEHICLE' | 'BATTERY' };
+  CreateAuction: undefined;
+  Wallet: undefined;
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -127,6 +133,27 @@ export default function RootNavigator() {
         component={ChatbotScreen}
         options={{ 
           title: 'Trợ lý AI',
+        }}
+      />
+      <Stack.Screen 
+        name="AuctionDetail" 
+        component={AuctionDetailScreen}
+        options={{ 
+          title: 'Chi tiết đấu giá',
+        }}
+      />
+      <Stack.Screen 
+        name="CreateAuction" 
+        component={CreateAuctionScreen}
+        options={{ 
+          title: 'Tạo đấu giá',
+        }}
+      />
+      <Stack.Screen 
+        name="Wallet" 
+        component={WalletScreen}
+        options={{ 
+          title: 'Ví của tôi',
         }}
       />
     </Stack.Navigator>

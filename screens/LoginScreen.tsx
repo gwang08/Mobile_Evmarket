@@ -38,7 +38,7 @@ export default function LoginScreen({ onSwitchToRegister }: LoginScreenProps) {
       
       // Step 1: Open Google OAuth in WebBrowser to get code
       const result = await WebBrowser.openAuthSessionAsync(
-        'https://evmarket-api-staging.onrender.com/api/v1/auth/google?client_type=mobile',
+        'https://evmarket-api-staging-backup.onrender.com/api/v1/auth/google?client_type=mobile',
         'evmarket://auth-callback'
       );
 
@@ -68,7 +68,7 @@ export default function LoginScreen({ onSwitchToRegister }: LoginScreenProps) {
           
           // Step 2: Exchange code for token
           const response = await fetch(
-            'https://evmarket-api-staging.onrender.com/api/v1/auth/exchange-code',
+            'https://evmarket-api-staging-backup.onrender.com/api/v1/auth/exchange-code',
             {
               method: 'POST',
               headers: {
@@ -191,7 +191,7 @@ export default function LoginScreen({ onSwitchToRegister }: LoginScreenProps) {
           </View>
 
           <TouchableOpacity style={styles.googleButton} onPress={handleGoogleLogin}>
-            <Text style={styles.googleButtonText}>🔍 Đăng nhập với Google</Text>
+            <Text style={styles.googleButtonText}> Đăng nhập với Google</Text>
           </TouchableOpacity>
 
           <View style={styles.signupContainer}>
