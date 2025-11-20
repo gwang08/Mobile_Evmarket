@@ -16,6 +16,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { parseErrorMessage } from '../utils/errorHandler';
+import { authService } from '../services/authService';
 
 // Complete the auth session for Google Sign-In
 WebBrowser.maybeCompleteAuthSession();
@@ -35,13 +36,12 @@ export default function LoginScreen({ onSwitchToRegister }: LoginScreenProps) {
     try {
       setIsLoading(true);
       
-      
       // Step 1: Open Google OAuth in WebBrowser to get code
+      const googleAuthUrl = authService.getGoogleAuthUrl('mobile');
       const result = await WebBrowser.openAuthSessionAsync(
         'https://evmarket-api-staging-backup.onrender.com/api/v1/auth/google?client_type=mobile',
         'evmarket://auth-callback'
       );
-
 
       if (result.type === 'success') {
         // Parse the callback URL to get the code
@@ -61,8 +61,6 @@ export default function LoginScreen({ onSwitchToRegister }: LoginScreenProps) {
         
         // Clean the code - remove any fragment identifier (#) or trailing characters
         const cleanCode = code?.replace(/#.*$/, '').trim();
-        
-      
         
         if (cleanCode) {
           
@@ -99,10 +97,8 @@ export default function LoginScreen({ onSwitchToRegister }: LoginScreenProps) {
         }
       } else if (result.type === 'cancel') {
         showWarning('Bạn đã hủy đăng nhập với Google');
-      } else {
       }
     } catch (error: any) {
-    
       const errorMessage = parseErrorMessage(error);
       showError(errorMessage);
     } finally {

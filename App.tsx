@@ -15,18 +15,45 @@ function AppContent() {
     // Handle deep link when app is already running
     const handleDeepLink = (url: string) => {
       
-      // Check if it's a payment success callback
+      // Ignore Expo dev server links
+      if (url.startsWith('exp://') || url.startsWith('http://') || url.startsWith('https://')) {
+        return;
+      }
+      
+      // Check if it's a payment success callback (for wallet deposit)
       if (url.includes('evmarket://payment')) {
         const urlObj = new URL(url);
-        const status = urlObj.searchParams.get('status');
-        const orderId = urlObj.searchParams.get('orderId');
+        const resultCode = urlObj.searchParams.get('resultCode');
+        const message = urlObj.searchParams.get('message');
         
-        if (status === 'success') {
-          showSuccess('Thanh toán thành công! Tiền đã được nạp vào ví của bạn.');
-        } else if (status === 'cancel') {
-          showWarning('Bạn đã hủy quá trình thanh toán.');
-        } else if (status === 'fail') {
-          showError('Thanh toán thất bại. Vui lòng thử lại.');
+        if (resultCode === '0') {
+          // Payment successful
+          showSuccess('Nạp tiền thành công! Số dư đã được cập nhật vào ví.', 4000);
+        } else if (resultCode === '1006') {
+          // User cancelled
+          showWarning('Bạn đã hủy nạp tiền.');
+        } else {
+          // Payment failed
+          showError(message || 'Nạp tiền thất bại. Vui lòng thử lại.');
+        }
+      }
+      
+      // Check if it's a checkout callback (for product purchase)
+      if (url.includes('evmarket://checkout-callback')) {
+        const urlObj = new URL(url);
+        const resultCode = urlObj.searchParams.get('resultCode');
+        const message = urlObj.searchParams.get('message');
+        const transactionId = urlObj.searchParams.get('orderId'); // MoMo gửi orderId
+        
+        if (resultCode === '0') {
+          // Payment successful
+          showSuccess('Thanh toán thành công! Đơn hàng của bạn đã được xử lý.', 4000);
+        } else if (resultCode === '1006') {
+          // User cancelled
+          showWarning('Bạn đã hủy thanh toán.');
+        } else {
+          // Payment failed
+          showError(message || 'Thanh toán thất bại. Vui lòng thử lại.');
         }
       }
     };

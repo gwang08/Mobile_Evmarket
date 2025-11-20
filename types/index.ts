@@ -229,6 +229,7 @@ export interface CheckoutRequest {
   listingId: string;
   listingType: 'VEHICLE' | 'BATTERY';
   paymentMethod: 'MOMO' | 'WALLET';
+  redirectUrl?: string; // Optional redirect URL for MoMo payment
 }
 
 export interface MoMoPaymentInfo {

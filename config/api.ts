@@ -2,12 +2,20 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 
+<<<<<<< HEAD
 // Read from .env file via expo-constants
 const API_BASE_URL = Constants.expoConfig?.extra?.apiUrl || 'https://evmarket-api-staging-backup.onrender.com/api/v1';
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
   timeout: 60000, // Tăng lên 60 giây để đủ thời gian cho backend wake up từ sleep
+=======
+const API_BASE_URL = 'https://evmarket-api-staging-backup.onrender.com/api/v1';
+
+const apiClient = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 30000, // Tăng từ 10s lên 30s vì Render.com có thể chậm khi cold start
+>>>>>>> ed6aa06071a53bddef2ca621aa349730fa3a5bfc
   headers: {
     'Content-Type': 'application/json',
     'x-client-type': 'mobile', // Thêm header để backend biết đây là mobile request

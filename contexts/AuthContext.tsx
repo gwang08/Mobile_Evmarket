@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { User } from '../types';
+import { authService } from '../services/authService';
 
 interface AuthContextType {
   user: User | null;
@@ -64,9 +65,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
         throw new Error(data.message || 'Login failed');
       }
 
-      await AsyncStorage.setItem('accessToken', data.data.accessToken);
-      await AsyncStorage.setItem('user', JSON.stringify(data.data.user));
-      setUser(data.data.user);
+      await AsyncStorage.setItem('accessToken', response.data.accessToken);
+      await AsyncStorage.setItem('user', JSON.stringify(response.data.user));
+      setUser(response.data.user);
     } catch (error) {
       console.error('Login error:', error);
       throw error;
@@ -92,9 +93,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
         throw new Error(data.message || 'Registration failed');
       }
 
-      await AsyncStorage.setItem('accessToken', data.data.accessToken);
-      await AsyncStorage.setItem('user', JSON.stringify(data.data.user));
-      setUser(data.data.user);
+      await AsyncStorage.setItem('accessToken', response.data.accessToken);
+      await AsyncStorage.setItem('user', JSON.stringify(response.data.user));
+      setUser(response.data.user);
     } catch (error) {
       console.error('Registration error:', error);
       throw error;

@@ -14,6 +14,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { parseErrorMessage } from '../utils/errorHandler';
+import { authService } from '../services/authService';
 
 interface RegisterScreenProps {
   onSwitchToLogin: () => void;
@@ -93,12 +94,6 @@ export default function RegisterScreen({ onSwitchToLogin }: RegisterScreenProps)
           password 
         }),
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Registration failed');
-      }
 
       showSuccess('Đăng ký thành công! Vui lòng đăng nhập để tiếp tục.', 4000);
       setTimeout(() => {

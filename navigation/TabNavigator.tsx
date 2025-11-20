@@ -135,8 +135,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
     borderTopWidth: 1,
     borderTopColor: '#ecf0f1',
-    height: 75,
-    paddingBottom: 12,
+    height: 85, // Tăng từ 75 lên 85
+    paddingBottom: 20, // Tăng từ 12 lên 20 để tránh viền
     paddingTop: 12,
     shadowColor: '#000',
     shadowOffset: {

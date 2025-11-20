@@ -10,6 +10,7 @@ import {
   Platform,
   ActivityIndicator,
   Alert,
+  Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { chatbotService } from '../services/chatbotService';
@@ -24,7 +25,76 @@ interface Message {
   text: string;
   isUser: boolean;
   timestamp: Date;
+  links?: Array<{
+    url: string;
+    title: string;
+  }>;
 }
+
+// Parse vehicle/battery links from chatbot response
+const parseProductLinks = (answer: string): Array<{ url: string; title: string }> => {
+  const links: Array<{ url: string; title: string }> = [];
+  
+  // Match pattern 1: * **Title** ... /vehicle/id or /battery/id
+  const linkRegex1 = /\*\s+\*\*(.+?)\*\*.*?\/(vehicle|battery)\/([\w-]+)/g;
+  let match;
+
+  while ((match = linkRegex1.exec(answer)) !== null) {
+    const [, title, type, id] = match;
+    links.push({
+      title: title.trim(),
+      url: `/${type}/${id}`
+    });
+  }
+
+  // Match pattern 2: * **Title**: https://...vercel.app/vehicle/id
+  const linkRegex2 = /\*\s+\*\*(.+?)\*\*:?\s*https?:\/\/[^/]+\/(vehicle|battery)\/([\w-]+)/g;
+  while ((match = linkRegex2.exec(answer)) !== null) {
+    const [, title, type, id] = match;
+    // Check if not already added
+    if (!links.some(link => link.url === `/${type}/${id}`)) {
+      links.push({
+        title: title.trim(),
+        url: `/${type}/${id}`
+      });
+    }
+  }
+
+  // Match pattern 3: Standalone URLs - try to find title in nearby text
+  const linkRegex3 = /https?:\/\/[^/]+\/(vehicle|battery)\/([\w-]+)/g;
+  const urlMatches = Array.from(answer.matchAll(linkRegex3));
+  
+  for (const urlMatch of urlMatches) {
+    const [fullUrl, type, id] = urlMatch;
+    const urlIndex = urlMatch.index || 0;
+    
+    // Check if not already added
+    if (!links.some(link => link.url === `/${type}/${id}`)) {
+      // Try to extract title from text before URL (look for **title** pattern in previous 100 chars)
+      const textBefore = answer.substring(Math.max(0, urlIndex - 100), urlIndex);
+      const titleMatch = textBefore.match(/\*\*([^*]+)\*\*[^*]*$/);
+      
+      const title = titleMatch 
+        ? titleMatch[1].trim() 
+        : `Xem chi tiết ${type === 'vehicle' ? 'xe' : 'pin'}`;
+      
+      links.push({
+        title,
+        url: `/${type}/${id}`
+      });
+    }
+  }
+
+  return links;
+};
+
+// Format markdown text for display - Remove URLs from text
+const formatMessageText = (text: string): string => {
+  return text
+    .replace(/^\*\s+/gm, '• ') // Convert markdown bullets to •
+    .replace(/\*\*(.+?)\*\*/g, '$1') // Remove bold markers
+    .replace(/https?:\/\/[^\s]+/g, ''); // Remove URLs from text
+};
 
 export default function ChatbotScreen() {
   const navigation = useNavigation<ChatbotNavigationProp>();
@@ -72,11 +142,16 @@ export default function ChatbotScreen() {
     try {
       const response = await chatbotService.askChatbot(userMessage.text);
 
+      // Parse links from response
+      const links = parseProductLinks(response.answer);
+      const formattedText = formatMessageText(response.answer);
+
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: response.answer,
+        text: formattedText,
         isUser: false,
         timestamp: new Date(),
+        links: links.length > 0 ? links : undefined,
       };
 
       setMessages((prev) => [...prev, botMessage]);
@@ -114,32 +189,36 @@ export default function ChatbotScreen() {
   const renderMessage = ({ item }: { item: Message }) => {
     const isUser = item.isUser;
 
-    // Parse links in bot messages
-    const renderMessageText = (text: string) => {
-      if (isUser) {
-        return <Text style={styles.messageText}>{text}</Text>;
-      }
-
-      // Split by links (format: /vehicle/id or /battery/id)
-      const parts = text.split(/(\/(vehicle|battery)\/[a-z0-9]+)/g);
+    // Render formatted text with proper styling
+    const renderFormattedText = (text: string) => {
+      // Split by bold markers and line breaks
+      const lines = text.split('\n');
       
       return (
-        <Text style={styles.messageText}>
-          {parts.map((part, index) => {
-            if (part.match(/\/(vehicle|battery)\/[a-z0-9]+/)) {
-              return (
-                <Text
-                  key={index}
-                  style={styles.linkText}
-                  onPress={() => handleNavigateToProduct(part)}
-                >
-                  {part}
-                </Text>
-              );
-            }
-            return <Text key={index}>{part}</Text>;
+        <View>
+          {lines.map((line, lineIndex) => {
+            if (!line.trim()) return null;
+            
+            // Check if line contains bold text (format: **text**)
+            const parts = line.split(/(\*\*.+?\*\*)/g);
+            
+            return (
+              <Text key={lineIndex} style={styles.messageText}>
+                {parts.map((part, partIndex) => {
+                  // Check if this part is bold
+                  if (part.startsWith('**') && part.endsWith('**')) {
+                    return (
+                      <Text key={partIndex} style={styles.boldText}>
+                        {part.slice(2, -2)}
+                      </Text>
+                    );
+                  }
+                  return <Text key={partIndex}>{part}</Text>;
+                })}
+              </Text>
+            );
           })}
-        </Text>
+        </View>
       );
     };
 
@@ -150,20 +229,123 @@ export default function ChatbotScreen() {
           isUser ? styles.userMessageContainer : styles.botMessageContainer,
         ]}
       >
-        <View
-          style={[
-            styles.messageBubble,
-            isUser ? styles.userBubble : styles.botBubble,
-          ]}
-        >
-          {renderMessageText(item.text)}
+        {/* Avatar */}
+        {!isUser && (
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>🤖</Text>
+          </View>
+        )}
+        
+        <View style={styles.messageContent}>
+          <View
+            style={[
+              styles.messageBubble,
+              isUser ? styles.userBubble : styles.botBubble,
+            ]}
+          >
+            {isUser ? (
+              <Text style={[styles.messageText, styles.userMessageText]}>{item.text}</Text>
+            ) : (
+              renderFormattedText(item.text)
+            )}
+            
+            {/* Render product links if available */}
+            {!isUser && item.links && item.links.length > 0 && (
+              <View style={styles.linksContainer}>
+                <Text style={styles.linksTitle}>🔗 Sản phẩm gợi ý:</Text>
+                {item.links.map((link, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    style={styles.linkButton}
+                    onPress={() => handleNavigateToProduct(link.url)}
+                  >
+                    <Ionicons name="arrow-forward-circle" size={16} color="#3498db" />
+                    <Text style={styles.linkButtonText} numberOfLines={1}>
+                      {link.title}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+          </View>
+          <Text style={styles.timestamp}>
+            {item.timestamp.toLocaleTimeString('vi-VN', {
+              hour: '2-digit',
+              minute: '2-digit',
+            })}
+          </Text>
         </View>
-        <Text style={styles.timestamp}>
-          {item.timestamp.toLocaleTimeString('vi-VN', {
-            hour: '2-digit',
-            minute: '2-digit',
-          })}
-        </Text>
+
+        {/* Avatar */}
+        {isUser && (
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>👤</Text>
+          </View>
+        )}
+      </View>
+    );
+  };
+
+  const renderLoadingIndicator = () => {
+    const dot1Anim = useRef(new Animated.Value(0.4)).current;
+    const dot2Anim = useRef(new Animated.Value(0.4)).current;
+    const dot3Anim = useRef(new Animated.Value(0.4)).current;
+
+    useEffect(() => {
+      const animate = () => {
+        Animated.sequence([
+          Animated.timing(dot1Anim, {
+            toValue: 1,
+            duration: 400,
+            useNativeDriver: true,
+          }),
+          Animated.timing(dot2Anim, {
+            toValue: 1,
+            duration: 400,
+            useNativeDriver: true,
+          }),
+          Animated.timing(dot3Anim, {
+            toValue: 1,
+            duration: 400,
+            useNativeDriver: true,
+          }),
+          Animated.parallel([
+            Animated.timing(dot1Anim, {
+              toValue: 0.4,
+              duration: 400,
+              useNativeDriver: true,
+            }),
+            Animated.timing(dot2Anim, {
+              toValue: 0.4,
+              duration: 400,
+              useNativeDriver: true,
+            }),
+            Animated.timing(dot3Anim, {
+              toValue: 0.4,
+              duration: 400,
+              useNativeDriver: true,
+            }),
+          ]),
+        ]).start(() => animate());
+      };
+
+      animate();
+    }, []);
+
+    return (
+      <View style={[styles.messageContainer, styles.botMessageContainer]}>
+        <View style={styles.avatar}>
+          <Text style={styles.avatarText}>🤖</Text>
+        </View>
+        <View style={styles.messageContent}>
+          <View style={[styles.messageBubble, styles.botBubble, styles.loadingBubble]}>
+            <View style={styles.loadingDots}>
+              <Animated.View style={[styles.dot, { opacity: dot1Anim }]} />
+              <Animated.View style={[styles.dot, { opacity: dot2Anim }]} />
+              <Animated.View style={[styles.dot, { opacity: dot3Anim }]} />
+            </View>
+          </View>
+        </View>
       </View>
     );
   };
@@ -181,6 +363,7 @@ export default function ChatbotScreen() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.messagesList}
         onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+        ListFooterComponent={loading ? renderLoadingIndicator : null}
       />
 
       {/* Suggested Questions */}
@@ -236,15 +419,32 @@ const styles = StyleSheet.create({
   },
   messageContainer: {
     marginBottom: 15,
-  },
-  userMessageContainer: {
-    alignItems: 'flex-end',
-  },
-  botMessageContainer: {
+    flexDirection: 'row',
     alignItems: 'flex-start',
   },
+  userMessageContainer: {
+    justifyContent: 'flex-end',
+  },
+  botMessageContainer: {
+    justifyContent: 'flex-start',
+  },
+  avatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#ecf0f1',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginHorizontal: 8,
+  },
+  avatarText: {
+    fontSize: 20,
+  },
+  messageContent: {
+    flex: 1,
+    maxWidth: '75%',
+  },
   messageBubble: {
-    maxWidth: '80%',
     padding: 12,
     borderRadius: 16,
     marginBottom: 4,
@@ -252,6 +452,7 @@ const styles = StyleSheet.create({
   userBubble: {
     backgroundColor: '#3498db',
     borderBottomRightRadius: 4,
+    alignSelf: 'flex-end',
   },
   botBubble: {
     backgroundColor: 'white',
@@ -265,14 +466,66 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 2,
   },
+  loadingBubble: {
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+  },
+  loadingDots: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#95a5a6',
+    marginHorizontal: 3,
+  },
   messageText: {
     fontSize: 15,
     lineHeight: 20,
     color: '#2c3e50',
   },
+  userMessageText: {
+    color: '#ffffff',
+  },
+  boldText: {
+    fontWeight: 'bold',
+    color: '#2c3e50',
+  },
   linkText: {
     color: '#3498db',
     textDecorationLine: 'underline',
+  },
+  linksContainer: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#ecf0f1',
+  },
+  linksTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#7f8c8d',
+    marginBottom: 8,
+  },
+  linkButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f8f9fa',
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 6,
+    borderWidth: 1,
+    borderColor: '#e1e8ed',
+  },
+  linkButtonText: {
+    fontSize: 14,
+    color: '#3498db',
+    fontWeight: '500',
+    marginLeft: 8,
+    flex: 1,
   },
   timestamp: {
     fontSize: 11,
