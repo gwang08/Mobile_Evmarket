@@ -71,12 +71,6 @@ export default function ProfileScreen() {
 
   const menuItems = [
     {
-      id: 1,
-      title: "Lịch hẹn của tôi",
-      icon: "calendar-outline",
-      action: () => navigation.navigate("AppointmentList"),
-    },
-    {
       id: 2,
       title: "Sản phẩm của tôi",
       icon: "storefront-outline",

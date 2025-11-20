@@ -18,17 +18,17 @@ import { vehicleService } from "../services/vehicleService";
 import { batteryService } from "../services/batteryService";
 import { checkoutService } from "../services/checkoutService";
 import PaymentMethod from "../components/PaymentMethod";
-import { useToast } from "../contexts/ToastContext";
-import { parseErrorMessage } from "../utils/errorHandler";
-import { Ionicons } from "@expo/vector-icons";
+import { useToast } from '../contexts/ToastContext';
+import { parseErrorMessage } from '../utils/errorHandler';
+import { Ionicons } from '@expo/vector-icons';
 
-type CheckoutScreenRouteProp = RouteProp<RootStackParamList, "Checkout">;
-type CheckoutScreenNavigationProp = StackNavigationProp<RootStackParamList>;
+type FinalPaymentRouteProp = RouteProp<RootStackParamList, "FinalPayment">;
+type FinalPaymentNavigationProp = StackNavigationProp<RootStackParamList>;
 
-export default function CheckoutScreen() {
-  const route = useRoute<CheckoutScreenRouteProp>();
-  const navigation = useNavigation<CheckoutScreenNavigationProp>();
-  const { productId, productType } = route.params;
+export default function FinalPaymentScreen() {
+  const route = useRoute<FinalPaymentRouteProp>();
+  const navigation = useNavigation<FinalPaymentNavigationProp>();
+  const { appointmentId, transactionId, productId, productType } = route.params;
   const { showSuccess, showError, showWarning, showInfo } = useToast();
 
   const [product, setProduct] = useState<Vehicle | Battery | null>(null);
@@ -47,34 +47,10 @@ export default function CheckoutScreen() {
       setLoading(true);
       if (productType === "vehicle") {
         const response = await vehicleService.getVehicleById(productId);
-        const vehicle = response.data.vehicle;
-        setProduct(vehicle);
-
-        // Check if product is not available
-        if (vehicle.status !== "AVAILABLE") {
-          const message =
-            vehicle.status === "SOLD"
-              ? "Sản phẩm này đã được bán. Vui lòng chọn sản phẩm khác."
-              : "Sản phẩm này không còn khả dụng.";
-          showError(message);
-          setTimeout(() => navigation.goBack(), 2000);
-          return;
-        }
+        setProduct(response.data.vehicle);
       } else {
         const response = await batteryService.getBatteryById(productId);
-        const battery = response.data.battery;
-        setProduct(battery);
-
-        // Check if product is not available
-        if (battery.status !== "AVAILABLE") {
-          const message =
-            battery.status === "SOLD"
-              ? "Sản phẩm này đã được bán. Vui lòng chọn sản phẩm khác."
-              : "Sản phẩm này không còn khả dụng.";
-          showError(message);
-          setTimeout(() => navigation.goBack(), 2000);
-          return;
-        }
+        setProduct(response.data.battery);
       }
     } catch (error) {
       console.error("Error fetching product detail:", error);
@@ -114,26 +90,20 @@ export default function CheckoutScreen() {
             ? ("VEHICLE" as const)
             : ("BATTERY" as const),
         paymentMethod: selectedPaymentMethod,
-        depositOnly: true, // Pay 10% deposit only
-        // Add redirectUrl for MoMo to redirect back to app after payment
+        depositOnly: false, // Pay remaining 90%
         ...(selectedPaymentMethod === "MOMO" && {
-          redirectUrl: "evmarket://checkout-callback",
+          redirectUrl: "evmarket://final-payment-callback",
         }),
       };
 
       const response = await checkoutService.initiateCheckout(checkoutData);
 
-      console.log("Checkout response:", JSON.stringify(response, null, 2));
-
       if (selectedPaymentMethod === "MOMO" && response.data.paymentInfo) {
-        // Open MoMo app using deeplink
         const { deeplink, payUrl, qrCodeUrl, deeplinkMiniApp } =
           response.data.paymentInfo;
 
-        // Try to open MoMo app (don't check canOpenURL, just try)
         let opened = false;
 
-        // 1. Try app deeplink first
         if (deeplink) {
           try {
             await Linking.openURL(deeplink);
@@ -144,7 +114,6 @@ export default function CheckoutScreen() {
           }
         }
 
-        // 2. Fallback to QR code deeplink
         if (!opened && qrCodeUrl) {
           try {
             await Linking.openURL(qrCodeUrl);
@@ -155,7 +124,6 @@ export default function CheckoutScreen() {
           }
         }
 
-        // 3. Fallback to MiniApp deeplink
         if (!opened && deeplinkMiniApp) {
           try {
             await Linking.openURL(deeplinkMiniApp);
@@ -166,7 +134,6 @@ export default function CheckoutScreen() {
           }
         }
 
-        // 4. Last resort: open web payment page
         if (!opened && payUrl) {
           try {
             await Linking.openURL(payUrl);
@@ -185,38 +152,35 @@ export default function CheckoutScreen() {
           return;
         }
 
-        // Show instruction - MoMo will redirect back to app after payment
         showInfo(
-          "Vui lòng hoàn tất thanh toán cọc 10% trên MoMo. App sẽ tự động cập nhật khi thanh toán thành công.",
+          "Vui lòng hoàn tất thanh toán 90% trên MoMo. App sẽ tự động cập nhật khi thanh toán thành công.",
           5000
         );
 
-        // Navigate to AppointmentList after deposit
         setTimeout(() => {
-          navigation.navigate("AppointmentList");
+          navigation.navigate("Main", { screen: "Profile" });
         }, 2000);
       } else if (selectedPaymentMethod === "WALLET") {
-        // Wallet payment: Backend handles payment automatically with initiateCheckout
-        // Transaction is created and payment is completed in one step
+        const newTransactionId = response.data.transactionId;
 
-        console.log("Wallet payment completed:", response);
+        const paymentResult = await checkoutService.payWithWallet(
+          newTransactionId
+        );
 
-        // Deposit payment successful, transaction is now DEPOSIT_PAID
-        const depositAmount = product.price * 0.1;
+        const finalAmount = product.price * 0.9;
         showSuccess(
-          `Đặt cọc thành công ${formatPrice(
-            depositAmount
-          )} từ ví EVmarket! Vui lòng đặt lịch hẹn với người bán.`,
+          `Thanh toán thành công ${formatPrice(
+            finalAmount
+          )} từ ví EVmarket! Giao dịch hoàn tất.`,
           4000
         );
 
-        // Navigate to AppointmentList to schedule appointment
         setTimeout(() => {
-          navigation.navigate("AppointmentList");
+          navigation.navigate("Main", { screen: "Profile" });
         }, 2000);
       }
     } catch (error: any) {
-      console.error("Error processing checkout:", error);
+      console.error("Error processing final payment:", error);
       const errorMessage = parseErrorMessage(error);
       showError(errorMessage, 4000);
     } finally {
@@ -266,50 +230,38 @@ export default function CheckoutScreen() {
           </View>
         </View>
 
-        {/* Order Summary */}
+        {/* Payment Summary */}
         <View style={styles.summaryCard}>
-          <Text style={styles.summaryTitle}>Tóm tắt đơn hàng</Text>
+          <Text style={styles.summaryTitle}>Tóm tắt thanh toán</Text>
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Giá sản phẩm:</Text>
+            <Text style={styles.summaryLabel}>Tổng giá trị:</Text>
             <Text style={styles.summaryValue}>
               {formatPrice(product.price)}
             </Text>
           </View>
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Đặt cọc (10%):</Text>
-            <Text
-              style={[
-                styles.summaryValue,
-                { color: "#e67e22", fontWeight: "bold" },
-              ]}
-            >
-              {formatPrice(product.price * 0.1)}
+            <Text style={[styles.summaryLabel, { color: "#27ae60" }]}>
+              Đã thanh toán (10%):
             </Text>
-          </View>
-          <View style={styles.summaryRow}>
-            <Text
-              style={[styles.summaryLabel, { fontSize: 12, color: "#7f8c8d" }]}
-            >
-              Thanh toán sau (90%):
-            </Text>
-            <Text
-              style={[styles.summaryValue, { fontSize: 12, color: "#7f8c8d" }]}
-            >
-              {formatPrice(product.price * 0.9)}
+            <Text style={[styles.summaryValue, { color: "#27ae60" }]}>
+              -{formatPrice(product.price * 0.1)}
             </Text>
           </View>
           <View style={[styles.summaryRow, styles.totalRow]}>
-            <Text style={styles.totalLabel}>Thanh toán ngay:</Text>
+            <Text style={styles.totalLabel}>Thanh toán ngay (90%):</Text>
             <Text style={styles.totalValue}>
-              {formatPrice(product.price * 0.1)}
+              {formatPrice(product.price * 0.9)}
             </Text>
           </View>
           <View style={styles.noteBox}>
-            <Text style={styles.noteText}>
-              💡 Bạn chỉ cần thanh toán 10% giá trị sản phẩm để đặt cọc. Sau khi
-              đặt cọc, hãy đặt lịch hẹn với người bán để kiểm tra xe. 90% còn
-              lại sẽ thanh toán sau khi kiểm tra và chấp nhận xe.
-            </Text>
+            <View style={styles.noteRow}>
+              <Ionicons name="checkmark-circle" size={20} color="#27ae60" />
+              <Text style={styles.noteText}>Bạn đã kiểm tra và chấp nhận sản phẩm.</Text>
+            </View>
+            <View style={styles.noteRow}>
+              <Ionicons name="cash-outline" size={20} color="#3498db" />
+              <Text style={styles.noteText}>Thanh toán 90% còn lại để hoàn tất giao dịch.</Text>
+            </View>
           </View>
         </View>
 
@@ -318,33 +270,6 @@ export default function CheckoutScreen() {
           selectedMethod={selectedPaymentMethod}
           onMethodSelect={setSelectedPaymentMethod}
         />
-
-        {/* Seller Info */}
-        {product.seller && (
-          <View style={styles.sellerCard}>
-            <Text style={styles.sellerTitle}>Thông tin người bán</Text>
-            <View style={styles.sellerInfo}>
-              <Image
-                source={{ uri: product.seller.avatar }}
-                style={styles.sellerAvatar}
-              />
-              <View style={styles.sellerDetails}>
-                <Text style={styles.sellerName}>{product.seller.name}</Text>
-                <Text style={styles.sellerEmail}>{product.seller.email}</Text>
-                {product.seller.isVerified && (
-                  <View style={styles.verifiedBadge}>
-                    <Ionicons
-                      name="checkmark-circle"
-                      size={14}
-                      color="#27ae60"
-                    />
-                    <Text style={styles.verifiedBadgeText}>Đã xác thực</Text>
-                  </View>
-                )}
-              </View>
-            </View>
-          </View>
-        )}
       </ScrollView>
 
       {/* Payment Button */}
@@ -365,7 +290,7 @@ export default function CheckoutScreen() {
             </View>
           ) : (
             <Text style={styles.paymentButtonText}>
-              Đặt cọc 10% - {formatPrice(product.price * 0.1)}
+              Thanh toán {formatPrice(product.price * 0.9)}
             </Text>
           )}
         </TouchableOpacity>
@@ -455,14 +380,13 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   productPrice: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#e74c3c",
+    fontSize: 14,
+    color: "#7f8c8d",
   },
   summaryCard: {
     backgroundColor: "white",
     borderRadius: 12,
-    padding: 20,
+    padding: 15,
     marginBottom: 15,
     shadowColor: "#000",
     shadowOffset: {
@@ -490,14 +414,14 @@ const styles = StyleSheet.create({
   },
   summaryValue: {
     fontSize: 14,
+    fontWeight: "600",
     color: "#2c3e50",
-    fontWeight: "500",
   },
   totalRow: {
+    marginTop: 10,
+    paddingTop: 10,
     borderTopWidth: 1,
     borderTopColor: "#ecf0f1",
-    paddingTop: 10,
-    marginTop: 10,
   },
   totalLabel: {
     fontSize: 16,
@@ -510,71 +434,23 @@ const styles = StyleSheet.create({
     color: "#e67e22",
   },
   noteBox: {
-    backgroundColor: "#e8f5e9",
+    backgroundColor: "#d5f4e6",
     borderLeftWidth: 4,
     borderLeftColor: "#27ae60",
     padding: 12,
     marginTop: 15,
     borderRadius: 6,
   },
+  noteRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginVertical: 4,
+  },
   noteText: {
     fontSize: 13,
-    color: "#2c3e50",
-    lineHeight: 20,
-  },
-  sellerCard: {
-    backgroundColor: "white",
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 15,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  sellerTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#2c3e50",
-    marginBottom: 15,
-  },
-  sellerInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  sellerAvatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    marginRight: 15,
-  },
-  sellerDetails: {
-    flex: 1,
-  },
-  sellerName: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#2c3e50",
-    marginBottom: 3,
-  },
-  sellerEmail: {
-    fontSize: 12,
-    color: "#7f8c8d",
-    marginBottom: 3,
-  },
-  verifiedBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  verifiedBadgeText: {
-    fontSize: 12,
     color: "#27ae60",
-    fontWeight: "600",
+    flex: 1,
   },
   paymentButtonContainer: {
     padding: 15,
@@ -597,7 +473,7 @@ const styles = StyleSheet.create({
   },
   paymentButtonText: {
     color: "white",
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "bold",
   },
   processingContainer: {

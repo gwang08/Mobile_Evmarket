@@ -13,13 +13,17 @@ import ProfileScreen from "../screens/ProfileScreen";
 import WalletScreen from "../screens/WalletScreen";
 import SellScreen from "../screens/SellScreen";
 import AuctionScreen from "../screens/AuctionScreen";
+import AppointmentListScreen from "../screens/AppointmentListScreen";
 
 export type TabParamList = {
   Home: undefined;
   Products: { initialTab?: "vehicles" | "batteries" } | undefined;
   Auction: undefined;
+  // Appointments is optional and only mounted when authenticated
+  Appointments?: undefined;
   // Sell is optional and only mounted when authenticated
   Sell?: undefined;
+  Wallet?: undefined;
   Profile: undefined;
 };
 
@@ -47,6 +51,8 @@ export default function TabNavigator({ initialRouteName }: TabNavigatorProps) {
               iconName = focused ? "grid" : "grid-outline";
             } else if (route.name === "Auction") {
               iconName = focused ? "hammer" : "hammer-outline";
+            } else if (route.name === "Appointments") {
+              iconName = focused ? "calendar" : "calendar-outline";
             } else if (route.name === "Sell") {
               iconName = "add-circle";
               iconSize = 35; // Larger icon for sell tab
@@ -95,6 +101,18 @@ export default function TabNavigator({ initialRouteName }: TabNavigatorProps) {
             headerTitle: "Sản phẩm",
           }}
         />
+
+        {/* Appointments tab only visible when authenticated */}
+        {isAuthenticated && (
+          <Tab.Screen
+            name="Appointments"
+            component={AppointmentListScreen}
+            options={{
+              title: "Lịch hẹn",
+              headerTitle: "Lịch hẹn của tôi",
+            }}
+          />
+        )}
 
         {/* Sell tab only visible when authenticated */}
         {isAuthenticated && (
