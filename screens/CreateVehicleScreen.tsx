@@ -9,6 +9,8 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  Image,
+  Alert,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -17,6 +19,7 @@ import { vehicleService, CreateVehicleRequest } from '../services/vehicleService
 import { Ionicons } from '@expo/vector-icons';
 import { useToast } from '../contexts/ToastContext';
 import { parseErrorMessage } from '../utils/errorHandler';
+import * as ImagePicker from 'expo-image-picker';
 
 type CreateVehicleNavigationProp = StackNavigationProp<RootStackParamList>;
 
@@ -29,11 +32,12 @@ export default function CreateVehicleScreen() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
+  const [location, setLocation] = useState('TP.HCM');
   const [brand, setBrand] = useState('');
   const [model, setModel] = useState('');
   const [year, setYear] = useState('');
   const [mileage, setMileage] = useState('');
-  const [imageUrl, setImageUrl] = useState('');
+  const [selectedImages, setSelectedImages] = useState<string[]>([]);
 
   // Specifications
   const [basicWarranty, setBasicWarranty] = useState('');
@@ -55,6 +59,30 @@ export default function CreateVehicleScreen() {
   const [chargingSpeed, setChargingSpeed] = useState('');
   const [batteryCapacity, setBatteryCapacity] = useState('');
 
+  const pickImages = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Cần quyền truy cập', 'Vui lòng cấp quyền truy cập thư viện ảnh');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsMultipleSelection: true,
+      quality: 0.8,
+      selectionLimit: 5,
+    });
+
+    if (!result.canceled && result.assets) {
+      const uris = result.assets.map(asset => asset.uri);
+      setSelectedImages(uris);
+    }
+  };
+
+  const removeImage = (index: number) => {
+    setSelectedImages(prev => prev.filter((_, i) => i !== index));
+  };
+
   const validateForm = () => {
     if (!title.trim()) {
       showWarning('Vui lòng nhập tiêu đề');
@@ -66,6 +94,10 @@ export default function CreateVehicleScreen() {
     }
     if (!price || isNaN(Number(price)) || Number(price) <= 0) {
       showWarning('Vui lòng nhập giá hợp lệ');
+      return false;
+    }
+    if (!location.trim()) {
+      showWarning('Vui lòng nhập địa điểm');
       return false;
     }
     if (!brand.trim()) {
@@ -84,8 +116,8 @@ export default function CreateVehicleScreen() {
       showWarning('Vui lòng nhập số km đã đi hợp lệ');
       return false;
     }
-    if (!imageUrl.trim()) {
-      showWarning('Vui lòng nhập ít nhất một URL hình ảnh');
+    if (selectedImages.length === 0) {
+      showWarning('Vui lòng chọn ít nhất 1 hình ảnh');
       return false;
     }
     return true;
@@ -98,7 +130,8 @@ export default function CreateVehicleScreen() {
       title: title.trim(),
       description: description.trim(),
       price: Number(price),
-      images: [imageUrl.trim()],
+      location: location.trim(),
+      images: selectedImages,
       brand: brand.trim(),
       model: model.trim(),
       year: Number(year),
@@ -132,13 +165,26 @@ export default function CreateVehicleScreen() {
 
     try {
       setLoading(true);
+      console.log('Submitting vehicle data...');
       await vehicleService.createVehicle(vehicleData);
       showSuccess('Xe của bạn đã được đăng bán thành công!');
       setTimeout(() => {
         navigation.goBack();
       }, 2000);
     } catch (error: any) {
-      const errorMessage = parseErrorMessage(error);
+      console.error('Submit error:', error);
+      console.error('Error response data:', error.response?.data);
+      
+      // Extract detailed error message
+      let errorMessage = 'Không thể đăng bán xe. Vui lòng thử lại.';
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       showError(errorMessage);
     } finally {
       setLoading(false);
@@ -189,6 +235,18 @@ export default function CreateVehicleScreen() {
               />
             </View>
             <View style={[styles.inputGroup, styles.halfWidth]}>
+              <Text style={styles.label}>Địa điểm *</Text>
+              <TextInput
+                style={[styles.input, styles.disabledInput]}
+                value={location}
+                editable={false}
+                placeholder="TP.HCM"
+              />
+            </View>
+          </View>
+
+          <View style={styles.row}>
+            <View style={[styles.inputGroup, styles.halfWidth]}>
               <Text style={styles.label}>Thương hiệu *</Text>
               <TextInput
                 style={styles.input}
@@ -197,9 +255,6 @@ export default function CreateVehicleScreen() {
                 placeholder="Honda, Toyota..."
               />
             </View>
-          </View>
-
-          <View style={styles.row}>
             <View style={[styles.inputGroup, styles.halfWidth]}>
               <Text style={styles.label}>Model *</Text>
               <TextInput
@@ -209,6 +264,9 @@ export default function CreateVehicleScreen() {
                 placeholder="Civic, Camry..."
               />
             </View>
+          </View>
+
+          <View style={styles.row}>
             <View style={[styles.inputGroup, styles.halfWidth]}>
               <Text style={styles.label}>Năm sản xuất *</Text>
               <TextInput
@@ -219,9 +277,6 @@ export default function CreateVehicleScreen() {
                 keyboardType="numeric"
               />
             </View>
-          </View>
-
-          <View style={styles.row}>
             <View style={[styles.inputGroup, styles.halfWidth]}>
               <Text style={styles.label}>Số km đã đi *</Text>
               <TextInput
@@ -232,15 +287,33 @@ export default function CreateVehicleScreen() {
                 keyboardType="numeric"
               />
             </View>
-            <View style={[styles.inputGroup, styles.halfWidth]}>
-              <Text style={styles.label}>URL hình ảnh *</Text>
-              <TextInput
-                style={styles.input}
-                value={imageUrl}
-                onChangeText={setImageUrl}
-                placeholder="https://..."
-              />
-            </View>
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Hình ảnh *</Text>
+            <TouchableOpacity style={styles.imagePickerButton} onPress={pickImages}>
+              <Ionicons name="images-outline" size={24} color="#27ae60" />
+              <Text style={styles.imagePickerText}>
+                {selectedImages.length > 0 
+                  ? `Đã chọn ${selectedImages.length} ảnh` 
+                  : 'Chọn hình ảnh (tối đa 5 ảnh)'}
+              </Text>
+            </TouchableOpacity>
+            {selectedImages.length > 0 && (
+              <View style={styles.imagePreviewContainer}>
+                {selectedImages.map((uri, index) => (
+                  <View key={index} style={styles.imagePreviewWrapper}>
+                    <Image source={{ uri }} style={styles.imagePreview} />
+                    <TouchableOpacity 
+                      style={styles.removeImageButton}
+                      onPress={() => removeImage(index)}
+                    >
+                      <Ionicons name="close-circle" size={24} color="#e74c3c" />
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </View>
+            )}
           </View>
 
           <Text style={styles.sectionTitle}>Thông số kỹ thuật (tùy chọn)</Text>
@@ -465,6 +538,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     backgroundColor: 'white',
   },
+  disabledInput: {
+    backgroundColor: '#f5f5f5',
+    color: '#95a5a6',
+  },
   textArea: {
     height: 100,
     textAlignVertical: 'top',
@@ -475,6 +552,46 @@ const styles = StyleSheet.create({
   },
   halfWidth: {
     width: '48%',
+  },
+  imagePickerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: '#27ae60',
+    borderStyle: 'dashed',
+    backgroundColor: '#f0fff4',
+  },
+  imagePickerText: {
+    fontSize: 16,
+    color: '#27ae60',
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  imagePreviewContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: 12,
+    gap: 10,
+  },
+  imagePreviewWrapper: {
+    position: 'relative',
+    width: 100,
+    height: 100,
+  },
+  imagePreview: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 8,
+  },
+  removeImageButton: {
+    position: 'absolute',
+    top: -8,
+    right: -8,
+    backgroundColor: 'white',
+    borderRadius: 12,
   },
   submitButton: {
     backgroundColor: '#27ae60',

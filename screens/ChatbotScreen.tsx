@@ -279,7 +279,7 @@ export default function ChatbotScreen() {
         {/* Avatar */}
         {isUser && (
           <View style={styles.avatar}>
-            <Text style={styles.avatarText}>👤</Text>
+            <Ionicons name="person" size={20} color="white" />
           </View>
         )}
       </View>

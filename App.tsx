@@ -1,12 +1,12 @@
-import React, { useEffect } from 'react';
-import { StatusBar } from 'expo-status-bar';
-import { NavigationContainer } from '@react-navigation/native';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { Linking } from 'react-native';
+import React, { useEffect } from "react";
+import { StatusBar } from "expo-status-bar";
+import { NavigationContainer } from "@react-navigation/native";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import { Linking } from "react-native";
 
-import RootNavigator from './navigation/RootNavigator';
-import { AuthProvider } from './contexts/AuthContext';
-import { ToastProvider, useToast } from './contexts/ToastContext';
+import RootNavigator from "./navigation/RootNavigator";
+import { AuthProvider } from "./contexts/AuthContext";
+import { ToastProvider, useToast } from "./contexts/ToastContext";
 
 function AppContent() {
   const { showSuccess, showError, showWarning } = useToast();
@@ -14,46 +14,76 @@ function AppContent() {
   useEffect(() => {
     // Handle deep link when app is already running
     const handleDeepLink = (url: string) => {
-      
       // Ignore Expo dev server links
-      if (url.startsWith('exp://') || url.startsWith('http://') || url.startsWith('https://')) {
+      if (
+        url.startsWith("exp://") ||
+        url.startsWith("http://") ||
+        url.startsWith("https://")
+      ) {
         return;
       }
-      
+
       // Check if it's a payment success callback (for wallet deposit)
-      if (url.includes('evmarket://payment')) {
+      if (url.includes("evmarket://payment")) {
         const urlObj = new URL(url);
-        const resultCode = urlObj.searchParams.get('resultCode');
-        const message = urlObj.searchParams.get('message');
-        
-        if (resultCode === '0') {
+        const resultCode = urlObj.searchParams.get("resultCode");
+        const message = urlObj.searchParams.get("message");
+
+        if (resultCode === "0") {
           // Payment successful
-          showSuccess('Nạp tiền thành công! Số dư đã được cập nhật vào ví.', 4000);
-        } else if (resultCode === '1006') {
+          showSuccess(
+            "Nạp tiền thành công! Số dư đã được cập nhật vào ví.",
+            4000
+          );
+        } else if (resultCode === "1006") {
           // User cancelled
-          showWarning('Bạn đã hủy nạp tiền.');
+          showWarning("Bạn đã hủy nạp tiền.");
         } else {
           // Payment failed
-          showError(message || 'Nạp tiền thất bại. Vui lòng thử lại.');
+          showError(message || "Nạp tiền thất bại. Vui lòng thử lại.");
         }
       }
-      
-      // Check if it's a checkout callback (for product purchase)
-      if (url.includes('evmarket://checkout-callback')) {
+
+      // Check if it's a deposit checkout callback (10% deposit payment)
+      if (url.includes("evmarket://checkout-callback")) {
         const urlObj = new URL(url);
-        const resultCode = urlObj.searchParams.get('resultCode');
-        const message = urlObj.searchParams.get('message');
-        const transactionId = urlObj.searchParams.get('orderId'); // MoMo gửi orderId
-        
-        if (resultCode === '0') {
-          // Payment successful
-          showSuccess('Thanh toán thành công! Đơn hàng của bạn đã được xử lý.', 4000);
-        } else if (resultCode === '1006') {
+        const resultCode = urlObj.searchParams.get("resultCode");
+        const message = urlObj.searchParams.get("message");
+        const transactionId = urlObj.searchParams.get("orderId"); // MoMo gửi orderId
+
+        if (resultCode === "0") {
+          // Deposit payment successful - navigate to Appointments tab
+          showSuccess(
+            "Đặt cọc 10% thành công! Vui lòng xem lịch hẹn và sắp xếp với người bán.",
+            5000
+          );
+        } else if (resultCode === "1006") {
           // User cancelled
-          showWarning('Bạn đã hủy thanh toán.');
+          showWarning("Bạn đã hủy đặt cọc.");
         } else {
           // Payment failed
-          showError(message || 'Thanh toán thất bại. Vui lòng thử lại.');
+          showError(message || "Đặt cọc thất bại. Vui lòng thử lại.");
+        }
+      }
+
+      // Check if it's a final payment callback (90% final payment)
+      if (url.includes("evmarket://final-payment-callback")) {
+        const urlObj = new URL(url);
+        const resultCode = urlObj.searchParams.get("resultCode");
+        const message = urlObj.searchParams.get("message");
+
+        if (resultCode === "0") {
+          // Final payment successful - transaction completed
+          showSuccess(
+            "Thanh toán 90% thành công! Giao dịch đã hoàn tất.",
+            5000
+          );
+        } else if (resultCode === "1006") {
+          // User cancelled
+          showWarning("Bạn đã hủy thanh toán.");
+        } else {
+          // Payment failed
+          showError(message || "Thanh toán thất bại. Vui lòng thử lại.");
         }
       }
     };
@@ -67,7 +97,7 @@ function AppContent() {
     };
 
     // Handle deep link when app is already running
-    const subscription = Linking.addEventListener('url', ({ url }) => {
+    const subscription = Linking.addEventListener("url", ({ url }) => {
       handleDeepLink(url);
     });
 
@@ -87,7 +117,6 @@ function AppContent() {
 }
 
 export default function App() {
-
   return (
     <SafeAreaProvider>
       <ToastProvider>

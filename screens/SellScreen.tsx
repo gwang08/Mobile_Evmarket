@@ -13,6 +13,7 @@ import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { RootStackParamList } from '../navigation/RootNavigator';
 import { TabParamList } from '../navigation/TabNavigator';
 import { useAuth } from '../contexts/AuthContext';
+import { Ionicons } from '@expo/vector-icons';
 
 type SellNavigationProp = CompositeNavigationProp<
   BottomTabNavigationProp<TabParamList, 'Sell'>,
@@ -52,7 +53,7 @@ export default function SellScreen() {
             activeOpacity={0.8}
           >
             <View style={styles.iconContainer}>
-              <Text style={styles.iconText}>🚗</Text>
+              <Ionicons name="car-sport" size={60} color="#3498db" />
             </View>
             <Text style={styles.optionTitle}>Đăng bán xe điện</Text>
             <Text style={styles.optionDescription}>
@@ -69,7 +70,7 @@ export default function SellScreen() {
             activeOpacity={0.8}
           >
             <View style={styles.iconContainer}>
-              <Text style={styles.iconText}>🔋</Text>
+              <Ionicons name="battery-charging" size={60} color="#27ae60" />
             </View>
             <Text style={styles.optionTitle}>Đăng bán pin điện</Text>
             <Text style={styles.optionDescription}>

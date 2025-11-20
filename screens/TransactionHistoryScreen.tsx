@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,14 +8,14 @@ import {
   Image,
   ActivityIndicator,
   RefreshControl,
-} from 'react-native';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack';
-import { RootStackParamList } from '../navigation/RootNavigator';
-import { Transaction } from '../types';
-import { transactionService } from '../services/transactionService';
-import { Ionicons } from '@expo/vector-icons';
-import { useToast } from '../contexts/ToastContext';
+} from "react-native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
+import { StackNavigationProp } from "@react-navigation/stack";
+import { RootStackParamList } from "../navigation/RootNavigator";
+import { Transaction } from "../types";
+import { transactionService } from "../services/transactionService";
+import { Ionicons } from "@expo/vector-icons";
+import { useToast } from "../contexts/ToastContext";
 
 type TransactionHistoryNavigationProp = StackNavigationProp<RootStackParamList>;
 
@@ -42,18 +42,20 @@ export default function TransactionHistoryScreen() {
     try {
       setLoading(true);
       const response = await transactionService.getMyTransactions(1, 20);
-      
-      // Filter only COMPLETED transactions
-      const completedTransactions = response.data.transactions.filter(
-        (transaction) => transaction.status === 'COMPLETED'
+
+      // Show both COMPLETED and DEPOSIT_PAID transactions
+      const relevantTransactions = response.data.transactions.filter(
+        (transaction) =>
+          transaction.status === "COMPLETED" ||
+          transaction.status === "DEPOSIT_PAID"
       );
-      
-      setTransactions(completedTransactions);
+
+      setTransactions(relevantTransactions);
       setHasMore(response.data.page < response.data.totalPages);
       setPage(1);
     } catch (error) {
-      console.error('Error loading transactions:', error);
-      showError('Không thể tải lịch sử giao dịch');
+      console.error("Error loading transactions:", error);
+      showError("Không thể tải lịch sử giao dịch");
     } finally {
       setLoading(false);
     }
@@ -66,38 +68,61 @@ export default function TransactionHistoryScreen() {
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND',
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
     }).format(amount);
   };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('vi-VN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
+    return date.toLocaleDateString("vi-VN", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
   const getStatusColor = (status: string) => {
-    // Chỉ hiển thị giao dịch COMPLETED
-    return '#27ae60';
+    switch (status) {
+      case "COMPLETED":
+        return "#27ae60";
+      case "DEPOSIT_PAID":
+        return "#f39c12";
+      default:
+        return "#95a5a6";
+    }
   };
 
   const getStatusText = (status: string) => {
-    // Chỉ hiển thị giao dịch COMPLETED
-    return 'Hoàn thành';
+    switch (status) {
+      case "COMPLETED":
+        return "Hoàn thành";
+      case "DEPOSIT_PAID":
+        return "Đã đặt cọc";
+      default:
+        return status;
+    }
   };
 
   const handleTransactionPress = (transaction: Transaction) => {
+    // If deposit paid, navigate to appointments list
+    if (transaction.status === "DEPOSIT_PAID") {
+      navigation.navigate("AppointmentList");
+      return;
+    }
+
+    // Otherwise navigate to product detail
     if (transaction.vehicle) {
-      navigation.navigate('VehicleDetail', { vehicleId: transaction.vehicle.id });
+      navigation.navigate("VehicleDetail", {
+        vehicleId: transaction.vehicle.id,
+      });
     } else if (transaction.battery) {
-      navigation.navigate('BatteryDetail', { batteryId: transaction.battery.id });
+      navigation.navigate("BatteryDetail", {
+        batteryId: transaction.battery.id,
+      });
     }
   };
 
@@ -119,21 +144,38 @@ export default function TransactionHistoryScreen() {
           <Text style={styles.productTitle} numberOfLines={2}>
             {product.title}
           </Text>
-          <Text style={styles.transactionDate}>{formatDate(item.createdAt)}</Text>
+          <Text style={styles.transactionDate}>
+            {formatDate(item.createdAt)}
+          </Text>
           <View style={styles.priceRow}>
             <Text style={styles.price}>{formatCurrency(item.finalPrice)}</Text>
-            <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
-              <Text style={styles.statusText}>{getStatusText(item.status)}</Text>
+            <View
+              style={[
+                styles.statusBadge,
+                { backgroundColor: getStatusColor(item.status) },
+              ]}
+            >
+              <Text style={styles.statusText}>
+                {getStatusText(item.status)}
+              </Text>
             </View>
           </View>
+          {item.status === "DEPOSIT_PAID" && (
+            <View style={styles.pendingPaymentBadge}>
+              <Ionicons name="alert-circle" size={14} color="#e67e22" />
+              <Text style={styles.pendingPaymentText}>Cần thanh toán 90%</Text>
+            </View>
+          )}
           <View style={styles.paymentRow}>
-            <Ionicons 
-              name={item.paymentGateway === 'MOMO' ? 'phone-portrait' : 'wallet'} 
-              size={14} 
-              color="#7f8c8d" 
+            <Ionicons
+              name={
+                item.paymentGateway === "MOMO" ? "phone-portrait" : "wallet"
+              }
+              size={14}
+              color="#7f8c8d"
             />
             <Text style={styles.paymentMethod}>
-              {item.paymentGateway === 'MOMO' ? 'MoMo' : 'Ví EVmarket'}
+              {item.paymentGateway === "MOMO" ? "MoMo" : "Ví EVmarket"}
             </Text>
           </View>
         </View>
@@ -161,7 +203,7 @@ export default function TransactionHistoryScreen() {
         </Text>
         <TouchableOpacity
           style={styles.shopButton}
-          onPress={() => navigation.navigate('Main', { screen: 'Products' })}
+          onPress={() => navigation.navigate("Main", { screen: "Products" })}
         >
           <Text style={styles.shopButtonText}>Khám phá sản phẩm</Text>
         </TouchableOpacity>
@@ -180,7 +222,7 @@ export default function TransactionHistoryScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={['#3498db']}
+            colors={["#3498db"]}
           />
         }
       />
@@ -191,61 +233,61 @@ export default function TransactionHistoryScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f6fa',
+    backgroundColor: "#f5f6fa",
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f5f6fa',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#f5f6fa",
   },
   loadingText: {
     marginTop: 10,
     fontSize: 16,
-    color: '#7f8c8d',
+    color: "#7f8c8d",
   },
   emptyContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f5f6fa',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#f5f6fa",
     padding: 20,
   },
   emptyTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#2c3e50',
+    fontWeight: "bold",
+    color: "#2c3e50",
     marginTop: 20,
     marginBottom: 10,
   },
   emptyText: {
     fontSize: 14,
-    color: '#7f8c8d',
-    textAlign: 'center',
+    color: "#7f8c8d",
+    textAlign: "center",
     marginBottom: 30,
   },
   shopButton: {
-    backgroundColor: '#3498db',
+    backgroundColor: "#3498db",
     paddingHorizontal: 30,
     paddingVertical: 12,
     borderRadius: 8,
   },
   shopButtonText: {
-    color: 'white',
+    color: "white",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   listContent: {
     padding: 15,
   },
   transactionCard: {
-    flexDirection: 'row',
-    backgroundColor: 'white',
+    flexDirection: "row",
+    backgroundColor: "white",
     borderRadius: 12,
     padding: 12,
     marginBottom: 12,
-    alignItems: 'center',
-    shadowColor: '#000',
+    alignItems: "center",
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 2,
@@ -265,25 +307,25 @@ const styles = StyleSheet.create({
   },
   productTitle: {
     fontSize: 15,
-    fontWeight: '600',
-    color: '#2c3e50',
+    fontWeight: "600",
+    color: "#2c3e50",
     marginBottom: 5,
   },
   transactionDate: {
     fontSize: 12,
-    color: '#7f8c8d',
+    color: "#7f8c8d",
     marginBottom: 8,
   },
   priceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: 5,
   },
   price: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#e74c3c',
+    fontWeight: "bold",
+    color: "#e74c3c",
   },
   statusBadge: {
     paddingHorizontal: 8,
@@ -291,17 +333,32 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   statusText: {
-    color: 'white',
+    color: "white",
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: "600",
+  },
+  pendingPaymentBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: "#fff3cd",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+    marginBottom: 5,
+  },
+  pendingPaymentText: {
+    fontSize: 12,
+    color: "#e67e22",
+    fontWeight: "600",
   },
   paymentRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 5,
   },
   paymentMethod: {
     fontSize: 12,
-    color: '#7f8c8d',
+    color: "#7f8c8d",
   },
 });
