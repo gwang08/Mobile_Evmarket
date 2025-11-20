@@ -15,6 +15,7 @@ import { SellerDetailResponse } from '../types';
 import { userService } from '../services/userService';
 import ReviewCard from '../components/ReviewCard';
 import { useToast } from '../contexts/ToastContext';
+import { Ionicons } from '@expo/vector-icons';
 
 type SellerDetailScreenRouteProp = RouteProp<RootStackParamList, 'SellerDetail'>;
 
@@ -122,8 +123,13 @@ export default function SellerDetailScreen() {
             </TouchableOpacity>
           )}
           <View style={styles.verifiedContainer}>
+            <Ionicons 
+              name={seller.isVerified ? "checkmark-circle" : "alert-circle-outline"} 
+              size={16} 
+              color={seller.isVerified ? "#27ae60" : "#f39c12"} 
+            />
             <Text style={[styles.verifiedStatus, seller.isVerified ? styles.verified : styles.notVerified]}>
-              {seller.isVerified ? '✓ Đã xác thực' : '⚠ Chưa xác thực'}
+              {seller.isVerified ? 'Đã xác thực' : 'Chưa xác thực'}
             </Text>
           </View>
         </View>
@@ -295,6 +301,9 @@ const styles = StyleSheet.create({
   },
   verifiedContainer: {
     marginTop: 5,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   verifiedStatus: {
     fontSize: 12,

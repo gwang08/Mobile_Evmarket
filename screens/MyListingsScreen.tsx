@@ -23,6 +23,7 @@ import { Vehicle, Battery } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { parseErrorMessage } from '../utils/errorHandler';
+import { Ionicons } from '@expo/vector-icons';
 
 type MyListingsNavigationProp = CompositeNavigationProp<
   StackNavigationProp<RootStackParamList, 'MyListings'>,
@@ -261,7 +262,7 @@ export default function MyListingsScreen() {
 
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
-      <Text style={styles.emptyStateIcon}>📦</Text>
+      <Ionicons name="cube-outline" size={80} color="#bdc3c7" />
       <Text style={styles.emptyStateTitle}>Chưa có sản phẩm</Text>
       <Text style={styles.emptyStateDescription}>
         Bạn chưa đăng bán sản phẩm nào. Hãy bắt đầu đăng bán để kiếm thêm thu nhập!
@@ -292,7 +293,8 @@ export default function MyListingsScreen() {
           style={styles.filterButton}
           onPress={() => setShowFilters(true)}
         >
-          <Text style={styles.filterButtonText}>🔍 Lọc & Sắp xếp</Text>
+          <Ionicons name="filter-outline" size={20} color="#3498db" />
+          <Text style={styles.filterButtonText}>Lọc & Sắp xếp</Text>
         </TouchableOpacity>
       </View>
 
@@ -303,7 +305,7 @@ export default function MyListingsScreen() {
           onPress={() => setActiveTab('vehicles')}
         >
           <Text style={[styles.tabText, activeTab === 'vehicles' && styles.activeTabText]}>
-            Xe điện 
+            Xe điện ({filteredVehicles.length})
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -466,6 +468,9 @@ const styles = StyleSheet.create({
     borderBottomColor: '#ecf0f1',
   },
   filterButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     backgroundColor: '#ecf0f1',
     paddingHorizontal: 15,
     paddingVertical: 8,
@@ -598,14 +603,11 @@ const styles = StyleSheet.create({
     paddingVertical: 60,
     paddingHorizontal: 30,
   },
-  emptyStateIcon: {
-    fontSize: 64,
-    marginBottom: 20,
-  },
   emptyStateTitle: {
     fontSize: 20,
     fontWeight: 'bold',
     color: '#2c3e50',
+    marginTop: 20,
     marginBottom: 10,
     textAlign: 'center',
   },

@@ -1,21 +1,22 @@
-import React from 'react';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Ionicons } from '@expo/vector-icons';
-import { StyleSheet, View, Text } from 'react-native';
-import { RouteProp, useRoute } from '@react-navigation/native';
-import { useAuth } from '../contexts/AuthContext';
-import ChatbotWidget from '../components/ChatbotWidget';
+import React from "react";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { Ionicons } from "@expo/vector-icons";
+import { StyleSheet, View, Text } from "react-native";
+import { RouteProp, useRoute } from "@react-navigation/native";
+import { useAuth } from "../contexts/AuthContext";
+import ChatbotWidget from "../components/ChatbotWidget";
 
 // Import screens
-import HomeScreen from '../screens/HomeScreen';
-import ProductsScreen from '../screens/ProductsScreen';
-import ProfileScreen from '../screens/ProfileScreen';
-import SellScreen from '../screens/SellScreen';
-import AuctionScreen from '../screens/AuctionScreen';
+import HomeScreen from "../screens/HomeScreen";
+import ProductsScreen from "../screens/ProductsScreen";
+import ProfileScreen from "../screens/ProfileScreen";
+import WalletScreen from "../screens/WalletScreen";
+import SellScreen from "../screens/SellScreen";
+import AuctionScreen from "../screens/AuctionScreen";
 
 export type TabParamList = {
   Home: undefined;
-  Products: { initialTab?: 'vehicles' | 'batteries' } | undefined;
+  Products: { initialTab?: "vehicles" | "batteries" } | undefined;
   Auction: undefined;
   // Sell is optional and only mounted when authenticated
   Sell?: undefined;
@@ -34,111 +35,125 @@ export default function TabNavigator({ initialRouteName }: TabNavigatorProps) {
   return (
     <>
       <Tab.Navigator
-        initialRouteName={initialRouteName || 'Home'}
+        initialRouteName={initialRouteName || "Home"}
         screenOptions={({ route }) => ({
-        tabBarIcon: ({ focused, color, size }) => {
-          let iconName: keyof typeof Ionicons.glyphMap;
-          let iconSize = size;
+          tabBarIcon: ({ focused, color, size }) => {
+            let iconName: keyof typeof Ionicons.glyphMap;
+            let iconSize = size;
 
-          if (route.name === 'Home') {
-            iconName = focused ? 'home' : 'home-outline';
-          } else if (route.name === 'Products') {
-            iconName = focused ? 'grid' : 'grid-outline';
-          } else if (route.name === 'Auction') {
-            iconName = focused ? 'hammer' : 'hammer-outline';
-          } else if (route.name === 'Sell') {
-            iconName = 'add-circle';
-            iconSize = 35; // Larger icon for sell tab
-            return (
-              <View style={[
-                styles.sellTabIcon, 
-                { backgroundColor: focused ? '#e74c3c' : '#3498db' }
-              ]}>
-                <Ionicons name={iconName} size={iconSize} color="white" />
-              </View>
-            );
-          } else if (route.name === 'Profile') {
-            iconName = focused ? 'person' : 'person-outline';
-          } else {
-            iconName = 'help-outline';
-          }
+            if (route.name === "Home") {
+              iconName = focused ? "home" : "home-outline";
+            } else if (route.name === "Products") {
+              iconName = focused ? "grid" : "grid-outline";
+            } else if (route.name === "Auction") {
+              iconName = focused ? "hammer" : "hammer-outline";
+            } else if (route.name === "Sell") {
+              iconName = "add-circle";
+              iconSize = 35; // Larger icon for sell tab
+              return (
+                <View
+                  style={[
+                    styles.sellTabIcon,
+                    { backgroundColor: focused ? "#e74c3c" : "#3498db" },
+                  ]}
+                >
+                  <Ionicons name={iconName} size={iconSize} color="white" />
+                </View>
+              );
+            } else if (route.name === "Wallet") {
+              iconName = focused ? "wallet" : "wallet-outline";
+            } else if (route.name === "Profile") {
+              iconName = focused ? "person" : "person-outline";
+            } else {
+              iconName = "help-outline";
+            }
 
-          return <Ionicons name={iconName} size={iconSize} color={color} />;
-        },
-        tabBarActiveTintColor: '#3498db',
-        tabBarInactiveTintColor: '#95a5a6',
-        tabBarStyle: styles.tabBar,
-        tabBarLabelStyle: styles.tabBarLabel,
-        headerStyle: styles.header,
-        headerTitleStyle: styles.headerTitle,
-        headerTintColor: '#2c3e50',
-      })}
-    >
-      <Tab.Screen 
-        name="Home" 
-        component={HomeScreen}
-        options={{
-          title: 'Trang chủ',
-          headerTitle: 'EV Market',
-        }}
-      />
-      <Tab.Screen 
-        name="Products" 
-        component={ProductsScreen}
-        options={{
-          title: 'Sản phẩm',
-          headerTitle: 'Sản phẩm',
-        }}
-      />
-
-      {/* Sell tab only visible when authenticated */}
-      {isAuthenticated && (
-        <Tab.Screen 
-          name="Sell" 
-          component={SellScreen}
+            return <Ionicons name={iconName} size={iconSize} color={color} />;
+          },
+          tabBarActiveTintColor: "#3498db",
+          tabBarInactiveTintColor: "#95a5a6",
+          tabBarStyle: styles.tabBar,
+          tabBarLabelStyle: styles.tabBarLabel,
+          headerStyle: styles.header,
+          headerTitleStyle: styles.headerTitle,
+          headerTintColor: "#2c3e50",
+        })}
+      >
+        <Tab.Screen
+          name="Home"
+          component={HomeScreen}
           options={{
-            title: '',
-            headerTitle: 'Đăng bán sản phẩm',
-            tabBarLabelStyle: styles.sellTabLabel,
+            title: "Trang chủ",
+            headerTitle: "EV Market",
           }}
         />
-      )}
+        <Tab.Screen
+          name="Products"
+          component={ProductsScreen}
+          options={{
+            title: "Sản phẩm",
+            headerTitle: "Sản phẩm",
+          }}
+        />
 
-      <Tab.Screen 
-        name="Auction" 
-        component={AuctionScreen}
-        options={{
-          title: 'Đấu giá',
-          headerTitle: 'Đấu giá',
-          headerShown: false,
-        }}
-      />
+        {/* Sell tab only visible when authenticated */}
+        {isAuthenticated && (
+          <Tab.Screen
+            name="Sell"
+            component={SellScreen}
+            options={{
+              title: "",
+              headerTitle: "Đăng bán sản phẩm",
+              tabBarLabelStyle: styles.sellTabLabel,
+            }}
+          />
+        )}
 
-      <Tab.Screen 
-        name="Profile" 
-        component={ProfileScreen}
-        options={{
-          title: 'Hồ sơ',
-          headerTitle: 'Hồ sơ của tôi',
-        }}
-      />
-    </Tab.Navigator>
-    
-    {/* Chatbot Widget */}
-    <ChatbotWidget />
+        {/* Wallet only visible when authenticated */}
+        {isAuthenticated && (
+          <Tab.Screen
+            name="Wallet"
+            component={WalletScreen}
+            options={{
+              title: "Ví",
+              headerTitle: "Ví của tôi",
+            }}
+          />
+        )}
+        <Tab.Screen
+          name="Auction"
+          component={AuctionScreen}
+          options={{
+            title: "Đấu giá",
+            headerTitle: "Đấu giá",
+            headerShown: false,
+          }}
+        />
+        <Tab.Screen
+          name="Profile"
+          component={ProfileScreen}
+          options={{
+            title: "Hồ sơ",
+            headerTitle: "Hồ sơ của tôi",
+          }}
+        />
+      </Tab.Navigator>
+
+      {/* Chatbot Widget */}
+      <ChatbotWidget />
     </>
   );
 }
 
 const styles = StyleSheet.create({
   tabBar: {
-    backgroundColor: '#ffffff',
+    backgroundColor: "#ffffff",
     borderTopWidth: 1,
-    borderTopColor: '#ecf0f1',
+    borderTopColor: "#ecf0f1",
     height: 85, // Tăng từ 75 lên 85
     paddingBottom: 20, // Tăng từ 12 lên 20 để tránh viền
     paddingTop: 12,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: -2,
@@ -149,16 +164,16 @@ const styles = StyleSheet.create({
   },
   tabBarLabel: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   sellTabIcon: {
     width: 50,
     height: 50,
     borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 5,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 2,
@@ -169,12 +184,12 @@ const styles = StyleSheet.create({
   },
   sellTabLabel: {
     fontSize: 11,
-    fontWeight: 'bold',
-    color: '#3498db',
+    fontWeight: "bold",
+    color: "#3498db",
   },
   header: {
-    backgroundColor: '#ffffff',
-    shadowColor: '#000',
+    backgroundColor: "#ffffff",
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 2,
@@ -185,7 +200,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#2c3e50',
+    fontWeight: "bold",
+    color: "#2c3e50",
   },
 });

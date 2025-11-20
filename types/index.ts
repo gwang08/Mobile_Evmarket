@@ -230,6 +230,7 @@ export interface CheckoutRequest {
   listingType: 'VEHICLE' | 'BATTERY';
   paymentMethod: 'MOMO' | 'WALLET';
   redirectUrl?: string; // Optional redirect URL for MoMo payment
+  depositOnly?: boolean; // true = pay 10% deposit, false/undefined = pay remaining 90%
 }
 
 export interface MoMoPaymentInfo {
@@ -258,7 +259,7 @@ export interface CheckoutResponse {
 export interface Transaction {
   id: string;
   buyerId: string;
-  status: 'PENDING' | 'COMPLETED' | 'FAILED' | 'CANCELLED' | 'PAID' | 'PAYMENT_PENDING';
+  status: 'PENDING' | 'COMPLETED' | 'FAILED' | 'CANCELLED' | 'DEPOSIT_PAID' | 'PAID' | 'PAYMENT_PENDING';
   type?: 'SALE' | 'AUCTION';
   listingType?: 'VEHICLE' | 'BATTERY';
   vehicleId: string | null;
@@ -294,6 +295,63 @@ export interface TransactionHistoryResponse {
     totalPages: number;
     totalResults: number;
   };
+}
+
+// Appointment Types
+export interface Appointment {
+  id: string;
+  transactionId: string;
+  buyerId: string;
+  sellerId: string;
+  buyerProposedDates: string[];
+  sellerProposedDates: string[];
+  confirmedDate: string | null;
+  status: 'PENDING' | 'CONFIRMED' | 'CANCELLED';
+  createdAt: string;
+  updatedAt: string;
+  vehicleId: string | null;
+  batteryId: string | null;
+  transaction?: {
+    id: string;
+    status: string;
+    vehicle?: {
+      title: string;
+      images: string[];
+    } | null;
+    battery?: {
+      title: string;
+      images: string[];
+    } | null;
+  };
+  buyer?: {
+    id: string;
+    name: string;
+    avatar: string;
+  };
+  seller?: {
+    id: string;
+    name: string;
+    avatar: string;
+  };
+}
+
+export interface AppointmentListResponse {
+  message: string;
+  data: {
+    appointments: Appointment[];
+    page: number;
+    limit: number;
+    totalPages: number;
+    totalResults: number;
+  };
+}
+
+export interface ProposeDateRequest {
+  proposedDates: string[]; // Array of 3 ISO date strings
+}
+
+export interface ConfirmAppointmentRequest {
+  confirmedDate: string; // ISO date string
 }
 
 // Chatbot Types

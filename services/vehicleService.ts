@@ -5,6 +5,7 @@ export interface CreateVehicleRequest {
   title: string;
   description: string;
   price: number;
+  location: string;
   images: string[];
   brand: string;
   model: string;
@@ -91,10 +92,45 @@ export const vehicleService = {
 
   createVehicle: async (vehicleData: CreateVehicleRequest): Promise<{ message: string; data: { vehicle: Vehicle } }> => {
     try {
-      const response = await apiClient.post('/vehicles/', vehicleData);
+      console.log('Creating vehicle with data:', JSON.stringify(vehicleData, null, 2));
+      
+      // Backend expects form-data with specifications as JSON string
+      const formData = new FormData();
+      formData.append('title', vehicleData.title);
+      formData.append('description', vehicleData.description);
+      formData.append('price', vehicleData.price.toString());
+      formData.append('location', vehicleData.location);
+      formData.append('brand', vehicleData.brand);
+      formData.append('model', vehicleData.model);
+      formData.append('year', vehicleData.year.toString());
+      formData.append('mileage', vehicleData.mileage.toString());
+      formData.append('specifications', JSON.stringify(vehicleData.specifications));
+      
+      // Add images as files (React Native file upload format)
+      vehicleData.images.forEach((imageUri, index) => {
+        const filename = imageUri.split('/').pop() || `image_${index}.jpg`;
+        const match = /\.(\w+)$/.exec(filename);
+        const type = match ? `image/${match[1]}` : 'image/jpeg';
+        
+        formData.append('images', {
+          uri: imageUri,
+          name: filename,
+          type: type,
+        } as any);
+      });
+      
+      const response = await apiClient.post('/vehicles/', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      console.log('Create vehicle response:', response.data);
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating vehicle:', error);
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      console.error('Error message:', error.message);
       throw error;
     }
   },

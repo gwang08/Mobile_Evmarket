@@ -13,13 +13,17 @@ import ChatbotScreen from '../screens/ChatbotScreen';
 import AuctionDetailScreen from '../screens/AuctionDetailScreen';
 import CreateAuctionScreen from '../screens/CreateAuctionScreen';
 import WalletScreen from '../screens/WalletScreen';
+import AppointmentListScreen from "../screens/AppointmentListScreen";
+import AppointmentDetailScreen from "../screens/AppointmentDetailScreen";
+import InspectionScreen from "../screens/InspectionScreen";
+import FinalPaymentScreen from "../screens/FinalPaymentScreen";
 
 export type RootStackParamList = {
   Main: { screen?: keyof TabParamList } | undefined;
   VehicleDetail: { vehicleId: string };
   BatteryDetail: { batteryId: string };
   SellerDetail: { sellerId: string };
-  Checkout: { productId: string; productType: 'vehicle' | 'battery' };
+  Checkout: { productId: string; productType: "vehicle" | "battery" };
   CreateVehicle: undefined;
   CreateBattery: undefined;
   MyListings: undefined;
@@ -28,12 +32,27 @@ export type RootStackParamList = {
   AuctionDetail: { listingId: string; listingType: 'VEHICLE' | 'BATTERY' };
   CreateAuction: undefined;
   Wallet: undefined;
+  AppointmentList: undefined;
+  AppointmentDetail: { appointmentId: string };
+  Inspection: { appointmentId: string };
+  FinalPayment: {
+    appointmentId: string;
+    transactionId: string;
+    productId: string;
+    productType: "vehicle" | "battery";
+  };
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
 
 // Wrapper component for TabNavigator to handle initial route
-function MainTabNavigator({ route, navigation }: { route: any; navigation: any }) {
+function MainTabNavigator({
+  route,
+  navigation,
+}: {
+  route: any;
+  navigation: any;
+}) {
   const initialRouteName = route.params?.screen as any | undefined;
 
   // Pass initialRouteName to TabNavigator. TabNavigator will decide
@@ -46,8 +65,8 @@ export default function RootNavigator() {
     <Stack.Navigator
       screenOptions={{
         headerStyle: {
-          backgroundColor: '#ffffff',
-          shadowColor: '#000',
+          backgroundColor: "#ffffff",
+          shadowColor: "#000",
           shadowOffset: {
             width: 0,
             height: 2,
@@ -58,81 +77,109 @@ export default function RootNavigator() {
         },
         headerTitleStyle: {
           fontSize: 18,
-          fontWeight: 'bold',
-          color: '#2c3e50',
+          fontWeight: "bold",
+          color: "#2c3e50",
         },
-        headerTintColor: '#2c3e50',
+        headerTintColor: "#2c3e50",
       }}
     >
-      <Stack.Screen 
-        name="Main" 
-        component={MainTabNavigator} 
-        options={{ 
-          title: 'Trang chủ',
-          headerShown: false 
+      <Stack.Screen
+        name="Main"
+        component={MainTabNavigator}
+        options={{
+          title: "Trang chủ",
+          headerShown: false,
         }}
       />
-      <Stack.Screen 
-        name="VehicleDetail" 
+      <Stack.Screen
+        name="VehicleDetail"
         component={VehicleDetailScreen}
-        options={{ 
-          title: 'Chi tiết xe',
+        options={{
+          title: "Chi tiết xe",
         }}
       />
-      <Stack.Screen 
-        name="BatteryDetail" 
+      <Stack.Screen
+        name="BatteryDetail"
         component={BatteryDetailScreen}
-        options={{ 
-          title: 'Chi tiết pin',
+        options={{
+          title: "Chi tiết pin",
         }}
       />
-      <Stack.Screen 
-        name="SellerDetail" 
+      <Stack.Screen
+        name="SellerDetail"
         component={SellerDetailScreen}
-        options={{ 
-          title: 'Thông tin người bán',
+        options={{
+          title: "Thông tin người bán",
         }}
       />
-      <Stack.Screen 
-        name="Checkout" 
+      <Stack.Screen
+        name="Checkout"
         component={CheckoutScreen}
-        options={{ 
-          title: 'Thanh toán',
+        options={{
+          title: "Đặt cọc 10%",
         }}
       />
-      <Stack.Screen 
-        name="CreateVehicle" 
+      <Stack.Screen
+        name="AppointmentDetail"
+        component={AppointmentDetailScreen}
+        options={{
+          title: "Chi tiết lịch hẹn",
+        }}
+      />
+      <Stack.Screen
+        name="Inspection"
+        component={InspectionScreen}
+        options={{
+          title: "Kiểm tra sản phẩm",
+        }}
+      />
+      <Stack.Screen
+        name="FinalPayment"
+        component={FinalPaymentScreen}
+        options={{
+          title: "Thanh toán 90%",
+        }}
+      />
+      <Stack.Screen
+        name="CreateVehicle"
         component={CreateVehicleScreen}
-        options={{ 
-          title: 'Đăng bán xe',
+        options={{
+          title: "Đăng bán xe",
         }}
       />
-      <Stack.Screen 
-        name="CreateBattery" 
+      <Stack.Screen
+        name="CreateBattery"
         component={CreateBatteryScreen}
-        options={{ 
-          title: 'Đăng bán pin',
+        options={{
+          title: "Đăng bán pin",
         }}
       />
-      <Stack.Screen 
-        name="MyListings" 
+      <Stack.Screen
+        name="MyListings"
         component={MyListingsScreen}
-        options={{ 
-          title: 'Sản phẩm của tôi',
+        options={{
+          title: "Sản phẩm của tôi",
         }}
       />
-      <Stack.Screen 
-        name="TransactionHistory" 
+      <Stack.Screen
+        name="AppointmentList"
+        component={AppointmentListScreen}
+        options={{
+          title: "Lịch hẹn của tôi",
+        }}
+      />
+      <Stack.Screen
+        name="TransactionHistory"
         component={TransactionHistoryScreen}
-        options={{ 
-          title: 'Lịch sử mua hàng',
+        options={{
+          title: "Lịch sử mua hàng",
         }}
       />
-      <Stack.Screen 
-        name="Chatbot" 
+      <Stack.Screen
+        name="Chatbot"
         component={ChatbotScreen}
-        options={{ 
-          title: 'Trợ lý AI',
+        options={{
+          title: "Trợ lý AI",
         }}
       />
       <Stack.Screen 

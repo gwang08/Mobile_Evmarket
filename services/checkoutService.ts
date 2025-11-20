@@ -14,6 +14,13 @@ export const checkoutService = {
     return response.data;
   },
 
+  async rejectTransaction(transactionId: string): Promise<{ message: string; data: Transaction }> {
+    const response = await apiClient.post<{ message: string; data: Transaction }>(
+      `/transactions/${transactionId}/reject`
+    );
+    return response.data;
+  },
+
   async payAuctionTransaction(transactionId: string, paymentMethod: 'WALLET' | 'MOMO'): Promise<{ message: string; data: any }> {
     const response = await apiClient.post<{ message: string; data: any }>(
       `/transactions/${transactionId}/pay`,

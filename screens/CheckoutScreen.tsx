@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -9,19 +9,20 @@ import {
   ActivityIndicator,
   SafeAreaView,
   Linking,
-} from 'react-native';
-import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack';
-import { RootStackParamList } from '../navigation/RootNavigator';
-import { Vehicle, Battery } from '../types';
-import { vehicleService } from '../services/vehicleService';
-import { batteryService } from '../services/batteryService';
-import { checkoutService } from '../services/checkoutService';
-import PaymentMethod from '../components/PaymentMethod';
-import { useToast } from '../contexts/ToastContext';
-import { parseErrorMessage } from '../utils/errorHandler';
+} from "react-native";
+import { RouteProp, useRoute, useNavigation } from "@react-navigation/native";
+import { StackNavigationProp } from "@react-navigation/stack";
+import { RootStackParamList } from "../navigation/RootNavigator";
+import { Vehicle, Battery } from "../types";
+import { vehicleService } from "../services/vehicleService";
+import { batteryService } from "../services/batteryService";
+import { checkoutService } from "../services/checkoutService";
+import PaymentMethod from "../components/PaymentMethod";
+import { useToast } from "../contexts/ToastContext";
+import { parseErrorMessage } from "../utils/errorHandler";
+import { Ionicons } from "@expo/vector-icons";
 
-type CheckoutScreenRouteProp = RouteProp<RootStackParamList, 'Checkout'>;
+type CheckoutScreenRouteProp = RouteProp<RootStackParamList, "Checkout">;
 type CheckoutScreenNavigationProp = StackNavigationProp<RootStackParamList>;
 
 export default function CheckoutScreen() {
@@ -32,7 +33,9 @@ export default function CheckoutScreen() {
 
   const [product, setProduct] = useState<Vehicle | Battery | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'MOMO' | 'WALLET' | null>(null);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<
+    "MOMO" | "WALLET" | null
+  >(null);
   const [processing, setProcessing] = useState(false);
 
   useEffect(() => {
@@ -42,16 +45,17 @@ export default function CheckoutScreen() {
   const fetchProductDetail = async () => {
     try {
       setLoading(true);
-      if (productType === 'vehicle') {
+      if (productType === "vehicle") {
         const response = await vehicleService.getVehicleById(productId);
         const vehicle = response.data.vehicle;
         setProduct(vehicle);
-        
+
         // Check if product is not available
-        if (vehicle.status !== 'AVAILABLE') {
-          const message = vehicle.status === 'SOLD' 
-            ? 'Sản phẩm này đã được bán. Vui lòng chọn sản phẩm khác.'
-            : 'Sản phẩm này không còn khả dụng.';
+        if (vehicle.status !== "AVAILABLE") {
+          const message =
+            vehicle.status === "SOLD"
+              ? "Sản phẩm này đã được bán. Vui lòng chọn sản phẩm khác."
+              : "Sản phẩm này không còn khả dụng.";
           showError(message);
           setTimeout(() => navigation.goBack(), 2000);
           return;
@@ -60,19 +64,20 @@ export default function CheckoutScreen() {
         const response = await batteryService.getBatteryById(productId);
         const battery = response.data.battery;
         setProduct(battery);
-        
+
         // Check if product is not available
-        if (battery.status !== 'AVAILABLE') {
-          const message = battery.status === 'SOLD' 
-            ? 'Sản phẩm này đã được bán. Vui lòng chọn sản phẩm khác.'
-            : 'Sản phẩm này không còn khả dụng.';
+        if (battery.status !== "AVAILABLE") {
+          const message =
+            battery.status === "SOLD"
+              ? "Sản phẩm này đã được bán. Vui lòng chọn sản phẩm khác."
+              : "Sản phẩm này không còn khả dụng.";
           showError(message);
           setTimeout(() => navigation.goBack(), 2000);
           return;
         }
       }
     } catch (error) {
-      console.error('Error fetching product detail:', error);
+      console.error("Error fetching product detail:", error);
       const errorMessage = parseErrorMessage(error);
       showError(errorMessage);
       setTimeout(() => navigation.goBack(), 2000);
@@ -82,20 +87,20 @@ export default function CheckoutScreen() {
   };
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND',
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
     }).format(price);
   };
 
   const handlePayment = async () => {
     if (!selectedPaymentMethod) {
-      showWarning('Vui lòng chọn phương thức thanh toán');
+      showWarning("Vui lòng chọn phương thức thanh toán");
       return;
     }
 
     if (!product) {
-      showError('Không tìm thấy thông tin sản phẩm');
+      showError("Không tìm thấy thông tin sản phẩm");
       return;
     }
 
@@ -104,100 +109,114 @@ export default function CheckoutScreen() {
 
       const checkoutData = {
         listingId: productId,
-        listingType: productType === 'vehicle' ? 'VEHICLE' as const : 'BATTERY' as const,
+        listingType:
+          productType === "vehicle"
+            ? ("VEHICLE" as const)
+            : ("BATTERY" as const),
         paymentMethod: selectedPaymentMethod,
+        depositOnly: true, // Pay 10% deposit only
         // Add redirectUrl for MoMo to redirect back to app after payment
-        ...(selectedPaymentMethod === 'MOMO' && {
-          redirectUrl: 'evmarket://checkout-callback'
-        })
+        ...(selectedPaymentMethod === "MOMO" && {
+          redirectUrl: "evmarket://checkout-callback",
+        }),
       };
 
       const response = await checkoutService.initiateCheckout(checkoutData);
 
-      if (selectedPaymentMethod === 'MOMO' && response.data.paymentInfo) {
+      console.log('Checkout response:', JSON.stringify(response, null, 2));
+
+      if (selectedPaymentMethod === "MOMO" && response.data.paymentInfo) {
         // Open MoMo app using deeplink
-        const { deeplink, payUrl, qrCodeUrl, deeplinkMiniApp } = response.data.paymentInfo;
-        
+        const { deeplink, payUrl, qrCodeUrl, deeplinkMiniApp } =
+          response.data.paymentInfo;
+
         // Try to open MoMo app (don't check canOpenURL, just try)
         let opened = false;
-        
+
         // 1. Try app deeplink first
         if (deeplink) {
           try {
             await Linking.openURL(deeplink);
             opened = true;
-            console.log('✅ Opened MoMo app via deeplink');
+            console.log("✅ Opened MoMo app via deeplink");
           } catch (error) {
-            console.warn('❌ Failed to open deeplink:', error);
+            console.warn("❌ Failed to open deeplink:", error);
           }
         }
-        
+
         // 2. Fallback to QR code deeplink
         if (!opened && qrCodeUrl) {
           try {
             await Linking.openURL(qrCodeUrl);
             opened = true;
-            console.log('✅ Opened MoMo app via QR deeplink');
+            console.log("✅ Opened MoMo app via QR deeplink");
           } catch (error) {
-            console.warn('❌ Failed to open QR deeplink:', error);
+            console.warn("❌ Failed to open QR deeplink:", error);
           }
         }
-        
+
         // 3. Fallback to MiniApp deeplink
         if (!opened && deeplinkMiniApp) {
           try {
             await Linking.openURL(deeplinkMiniApp);
             opened = true;
-            console.log('✅ Opened MoMo app via miniapp deeplink');
+            console.log("✅ Opened MoMo app via miniapp deeplink");
           } catch (error) {
-            console.warn('❌ Failed to open miniapp deeplink:', error);
+            console.warn("❌ Failed to open miniapp deeplink:", error);
           }
         }
-        
+
         // 4. Last resort: open web payment page
         if (!opened && payUrl) {
           try {
             await Linking.openURL(payUrl);
-            console.log('✅ Opened MoMo web payment page');
+            console.log("✅ Opened MoMo web payment page");
           } catch (error) {
-            console.error('❌ Failed to open payment URL:', error);
-            showError('Không thể mở trang thanh toán. Vui lòng thử lại.');
+            console.error("❌ Failed to open payment URL:", error);
+            showError("Không thể mở trang thanh toán. Vui lòng thử lại.");
             return;
           }
         }
-        
+
         if (!opened) {
-          showError('Không thể mở ứng dụng MoMo. Vui lòng kiểm tra và thử lại.');
+          showError(
+            "Không thể mở ứng dụng MoMo. Vui lòng kiểm tra và thử lại."
+          );
           return;
         }
-        
+
         // Show instruction - MoMo will redirect back to app after payment
-        showInfo('Vui lòng hoàn tất thanh toán trên MoMo. App sẽ tự động cập nhật khi thanh toán thành công.', 5000);
-        
-        // Navigate back to product detail to see updated status
+        showInfo(
+          "Vui lòng hoàn tất thanh toán cọc 10% trên MoMo. App sẽ tự động cập nhật khi thanh toán thành công.",
+          5000
+        );
+
+        // Navigate to AppointmentList after deposit
         setTimeout(() => {
-          navigation.goBack();
+          navigation.navigate("AppointmentList");
         }, 2000);
-      } else if (selectedPaymentMethod === 'WALLET') {
-        // Wallet payment requires 2 steps:
-        // 1. Initiate checkout (already done above - creates PENDING transaction)
-        // 2. Pay with wallet (completes the transaction)
+      } else if (selectedPaymentMethod === "WALLET") {
+        // Wallet payment: Backend handles payment automatically with initiateCheckout
+        // Transaction is created and payment is completed in one step
         
-        const transactionId = response.data.transactionId;
-        
-        // Step 2: Complete payment with wallet
-        const paymentResult = await checkoutService.payWithWallet(transactionId);
-        
-        // Payment successful, transaction is now COMPLETED
-        showSuccess(`Thanh toán thành công ${formatPrice(product.price)} từ ví EVmarket!`, 4000);
-        
-        // Navigate back to show SOLD status
+        console.log('Wallet payment completed:', response);
+
+        // Deposit payment successful, transaction is now DEPOSIT_PAID
+        const depositAmount = product.price * 0.1;
+        showSuccess(
+          `Đặt cọc thành công ${formatPrice(
+            depositAmount
+          )} từ ví EVmarket! Vui lòng đặt lịch hẹn với người bán.`,
+          4000
+        );
+
+        // Navigate to AppointmentList to schedule appointment
         setTimeout(() => {
-          navigation.goBack();
+          navigation.navigate("AppointmentList");
         }, 2000);
       }
     } catch (error: any) {
-      console.error('Error processing checkout:', error);
+      console.error("Error processing checkout:", error);
       const errorMessage = parseErrorMessage(error);
       showError(errorMessage, 4000);
     } finally {
@@ -218,7 +237,10 @@ export default function CheckoutScreen() {
     return (
       <View style={styles.errorContainer}>
         <Text style={styles.errorText}>Không thể tải thông tin sản phẩm</Text>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
           <Text style={styles.backButtonText}>Quay lại</Text>
         </TouchableOpacity>
       </View>
@@ -238,7 +260,9 @@ export default function CheckoutScreen() {
           <View style={styles.productInfo}>
             <Text style={styles.productTitle}>{product.title}</Text>
             <Text style={styles.productBrand}>{product.brand}</Text>
-            <Text style={styles.productPrice}>{formatPrice(product.price)}</Text>
+            <Text style={styles.productPrice}>
+              {formatPrice(product.price)}
+            </Text>
           </View>
         </View>
 
@@ -247,15 +271,45 @@ export default function CheckoutScreen() {
           <Text style={styles.summaryTitle}>Tóm tắt đơn hàng</Text>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Giá sản phẩm:</Text>
-            <Text style={styles.summaryValue}>{formatPrice(product.price)}</Text>
+            <Text style={styles.summaryValue}>
+              {formatPrice(product.price)}
+            </Text>
           </View>
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Phí vận chuyển:</Text>
-            <Text style={styles.summaryValue}>Miễn phí</Text>
+            <Text style={styles.summaryLabel}>Đặt cọc (10%):</Text>
+            <Text
+              style={[
+                styles.summaryValue,
+                { color: "#e67e22", fontWeight: "bold" },
+              ]}
+            >
+              {formatPrice(product.price * 0.1)}
+            </Text>
+          </View>
+          <View style={styles.summaryRow}>
+            <Text
+              style={[styles.summaryLabel, { fontSize: 12, color: "#7f8c8d" }]}
+            >
+              Thanh toán sau (90%):
+            </Text>
+            <Text
+              style={[styles.summaryValue, { fontSize: 12, color: "#7f8c8d" }]}
+            >
+              {formatPrice(product.price * 0.9)}
+            </Text>
           </View>
           <View style={[styles.summaryRow, styles.totalRow]}>
-            <Text style={styles.totalLabel}>Tổng cộng:</Text>
-            <Text style={styles.totalValue}>{formatPrice(product.price)}</Text>
+            <Text style={styles.totalLabel}>Thanh toán ngay:</Text>
+            <Text style={styles.totalValue}>
+              {formatPrice(product.price * 0.1)}
+            </Text>
+          </View>
+          <View style={styles.noteBox}>
+            <Text style={styles.noteText}>
+              💡 Bạn chỉ cần thanh toán 10% giá trị sản phẩm để đặt cọc. Sau khi
+              đặt cọc, hãy đặt lịch hẹn với người bán để kiểm tra xe. 90% còn
+              lại sẽ thanh toán sau khi kiểm tra và chấp nhận xe.
+            </Text>
           </View>
         </View>
 
@@ -278,7 +332,10 @@ export default function CheckoutScreen() {
                 <Text style={styles.sellerName}>{product.seller.name}</Text>
                 <Text style={styles.sellerEmail}>{product.seller.email}</Text>
                 {product.seller.isVerified && (
-                  <Text style={styles.verifiedBadge}>✓ Đã xác thực</Text>
+                  <View style={styles.verifiedBadge}>
+                    <Ionicons name="checkmark-circle" size={14} color="#27ae60" />
+                    <Text style={styles.verifiedBadgeText}>Đã xác thực</Text>
+                  </View>
                 )}
               </View>
             </View>
@@ -292,7 +349,7 @@ export default function CheckoutScreen() {
           style={[
             styles.paymentButton,
             !selectedPaymentMethod && styles.paymentButtonDisabled,
-            processing && styles.paymentButtonProcessing
+            processing && styles.paymentButtonProcessing,
           ]}
           onPress={handlePayment}
           disabled={!selectedPaymentMethod || processing}
@@ -304,7 +361,7 @@ export default function CheckoutScreen() {
             </View>
           ) : (
             <Text style={styles.paymentButtonText}>
-              Thanh toán {formatPrice(product.price)}
+              Đặt cọc 10% - {formatPrice(product.price * 0.1)}
             </Text>
           )}
         </TouchableOpacity>
@@ -316,7 +373,7 @@ export default function CheckoutScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: "#f8f9fa",
   },
   scrollView: {
     flex: 1,
@@ -324,46 +381,46 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f8f9fa',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#f8f9fa",
   },
   loadingText: {
     marginTop: 10,
     fontSize: 16,
-    color: '#7f8c8d',
+    color: "#7f8c8d",
   },
   errorContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f8f9fa',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#f8f9fa",
     padding: 20,
   },
   errorText: {
     fontSize: 16,
-    color: '#e74c3c',
-    textAlign: 'center',
+    color: "#e74c3c",
+    textAlign: "center",
     marginBottom: 20,
   },
   backButton: {
-    backgroundColor: '#3498db',
+    backgroundColor: "#3498db",
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 8,
   },
   backButtonText: {
-    color: 'white',
+    color: "white",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   productCard: {
-    backgroundColor: 'white',
+    backgroundColor: "white",
     borderRadius: 12,
     padding: 15,
     marginBottom: 15,
-    flexDirection: 'row',
-    shadowColor: '#000',
+    flexDirection: "row",
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 2,
@@ -380,30 +437,30 @@ const styles = StyleSheet.create({
   },
   productInfo: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   productTitle: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#2c3e50',
+    fontWeight: "bold",
+    color: "#2c3e50",
     marginBottom: 5,
   },
   productBrand: {
     fontSize: 14,
-    color: '#7f8c8d',
+    color: "#7f8c8d",
     marginBottom: 5,
   },
   productPrice: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#e74c3c',
+    fontWeight: "bold",
+    color: "#e74c3c",
   },
   summaryCard: {
-    backgroundColor: 'white',
+    backgroundColor: "white",
     borderRadius: 12,
     padding: 20,
     marginBottom: 15,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 2,
@@ -414,46 +471,59 @@ const styles = StyleSheet.create({
   },
   summaryTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#2c3e50',
+    fontWeight: "bold",
+    color: "#2c3e50",
     marginBottom: 15,
   },
   summaryRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginBottom: 10,
   },
   summaryLabel: {
     fontSize: 14,
-    color: '#7f8c8d',
+    color: "#7f8c8d",
   },
   summaryValue: {
     fontSize: 14,
-    color: '#2c3e50',
-    fontWeight: '500',
+    color: "#2c3e50",
+    fontWeight: "500",
   },
   totalRow: {
     borderTopWidth: 1,
-    borderTopColor: '#ecf0f1',
+    borderTopColor: "#ecf0f1",
     paddingTop: 10,
     marginTop: 10,
   },
   totalLabel: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#2c3e50',
+    fontWeight: "bold",
+    color: "#2c3e50",
   },
   totalValue: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#e74c3c',
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#e67e22",
+  },
+  noteBox: {
+    backgroundColor: "#e8f5e9",
+    borderLeftWidth: 4,
+    borderLeftColor: "#27ae60",
+    padding: 12,
+    marginTop: 15,
+    borderRadius: 6,
+  },
+  noteText: {
+    fontSize: 13,
+    color: "#2c3e50",
+    lineHeight: 20,
   },
   sellerCard: {
-    backgroundColor: 'white',
+    backgroundColor: "white",
     borderRadius: 12,
     padding: 20,
     marginBottom: 15,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 2,
@@ -464,13 +534,13 @@ const styles = StyleSheet.create({
   },
   sellerTitle: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#2c3e50',
+    fontWeight: "bold",
+    color: "#2c3e50",
     marginBottom: 15,
   },
   sellerInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   sellerAvatar: {
     width: 50,
@@ -483,52 +553,57 @@ const styles = StyleSheet.create({
   },
   sellerName: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#2c3e50',
+    fontWeight: "600",
+    color: "#2c3e50",
     marginBottom: 3,
   },
   sellerEmail: {
     fontSize: 12,
-    color: '#7f8c8d',
+    color: "#7f8c8d",
     marginBottom: 3,
   },
   verifiedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  verifiedBadgeText: {
     fontSize: 12,
-    color: '#27ae60',
-    fontWeight: '600',
+    color: "#27ae60",
+    fontWeight: "600",
   },
   paymentButtonContainer: {
     padding: 15,
-    backgroundColor: 'white',
+    backgroundColor: "white",
     borderTopWidth: 1,
-    borderTopColor: '#ecf0f1',
+    borderTopColor: "#ecf0f1",
   },
   paymentButton: {
-    backgroundColor: '#27ae60',
+    backgroundColor: "#27ae60",
     borderRadius: 12,
     paddingVertical: 15,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   paymentButtonDisabled: {
-    backgroundColor: '#bdc3c7',
+    backgroundColor: "#bdc3c7",
   },
   paymentButtonProcessing: {
-    backgroundColor: '#f39c12',
+    backgroundColor: "#f39c12",
   },
   paymentButtonText: {
-    color: 'white',
+    color: "white",
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   processingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   processingText: {
-    color: 'white',
+    color: "white",
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginLeft: 10,
   },
 });
