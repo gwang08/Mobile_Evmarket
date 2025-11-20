@@ -39,7 +39,7 @@ export default function LoginScreen({ onSwitchToRegister }: LoginScreenProps) {
       // Step 1: Open Google OAuth in WebBrowser to get code
       const googleAuthUrl = authService.getGoogleAuthUrl('mobile');
       const result = await WebBrowser.openAuthSessionAsync(
-        googleAuthUrl,
+        'https://evmarket-api-staging-backup.onrender.com/api/v1/auth/google?client_type=mobile',
         'evmarket://auth-callback'
       );
 
@@ -63,8 +63,25 @@ export default function LoginScreen({ onSwitchToRegister }: LoginScreenProps) {
         const cleanCode = code?.replace(/#.*$/, '').trim();
         
         if (cleanCode) {
-          // Step 2: Exchange code for token using authService
-          const data = await authService.exchangeGoogleCode(cleanCode);
+          
+          // Step 2: Exchange code for token
+          const response = await fetch(
+            'https://evmarket-api-staging-backup.onrender.com/api/v1/auth/exchange-code',
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ code: cleanCode }),
+            }
+          );
+
+          
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(data.message || 'Failed to exchange code for token');
+          }
 
           // Save token and user data
           await AsyncStorage.setItem('accessToken', data.data.accessToken);
@@ -170,7 +187,7 @@ export default function LoginScreen({ onSwitchToRegister }: LoginScreenProps) {
           </View>
 
           <TouchableOpacity style={styles.googleButton} onPress={handleGoogleLogin}>
-            <Text style={styles.googleButtonText}>🔍 Đăng nhập với Google</Text>
+            <Text style={styles.googleButtonText}> Đăng nhập với Google</Text>
           </TouchableOpacity>
 
           <View style={styles.signupContainer}>

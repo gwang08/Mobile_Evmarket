@@ -62,7 +62,6 @@ export default function MyListingsScreen() {
 
   const loadMyListings = async () => {
     if (!user?.id) {
-      console.log('No user ID available');
       return;
     }
 

@@ -62,14 +62,15 @@ export default function ProfileScreen() {
   };
 
   const menuItems = [
-    { id: 1, title: 'Sản phẩm của tôi', icon: '🏪', action: () => navigation.navigate('MyListings') },
-    { id: 2, title: 'Lịch sử đơn hàng', icon: '📋' },
-    { id: 3, title: 'Yêu thích', icon: '❤️' },
-    { id: 4, title: 'Cài đặt thanh toán', icon: '💳' },
-    { id: 5, title: 'Hỗ trợ khách hàng', icon: '🎧' },
-    { id: 6, title: 'Cài đặt thông báo', icon: '🔔' },
-    { id: 7, title: 'Chính sách bảo mật', icon: '🔒' },
-    { id: 8, title: 'Điều khoản sử dụng', icon: '📄' },
+    { id: 1, title: 'Ví của tôi', icon: '💰', action: () => navigation.navigate('Wallet') },
+    { id: 2, title: 'Sản phẩm của tôi', icon: '🏪', action: () => navigation.navigate('MyListings') },
+    { id: 3, title: 'Lịch sử đơn hàng', icon: '📋' },
+    { id: 4, title: 'Yêu thích', icon: '❤️' },
+    { id: 5, title: 'Cài đặt thanh toán', icon: '💳' },
+    { id: 6, title: 'Hỗ trợ khách hàng', icon: '🎧' },
+    { id: 7, title: 'Cài đặt thông báo', icon: '🔔' },
+    { id: 8, title: 'Chính sách bảo mật', icon: '🔒' },
+    { id: 9, title: 'Điều khoản sử dụng', icon: '📄' },
   ];
 
   if (isLoading) {

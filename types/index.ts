@@ -180,7 +180,7 @@ export interface WalletResponse {
 
 export interface DepositRequest {
   amount: number;
-  redirectUrl?: string; // Optional redirect URL for MoMo payment
+  redirectUrl?: string;
 }
 
 export interface DepositResponse {
@@ -258,11 +258,13 @@ export interface CheckoutResponse {
 export interface Transaction {
   id: string;
   buyerId: string;
-  status: 'PENDING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
+  status: 'PENDING' | 'COMPLETED' | 'FAILED' | 'CANCELLED' | 'PAID' | 'PAYMENT_PENDING';
+  type?: 'SALE' | 'AUCTION';
+  listingType?: 'VEHICLE' | 'BATTERY';
   vehicleId: string | null;
   batteryId: string | null;
   finalPrice: number;
-  paymentGateway: 'MOMO' | 'WALLET';
+  paymentGateway: 'MOMO' | 'WALLET' | 'INTERNAL';
   paymentDetail: any;
   createdAt: string;
   updatedAt: string;
@@ -276,6 +278,10 @@ export interface Transaction {
     title: string;
     images: string[];
   } | null;
+  batteries?: Array<{
+    title: string;
+    images: string[];
+  }>;
   review: any;
 }
 
@@ -297,4 +303,162 @@ export interface ChatbotRequest {
 
 export interface ChatbotResponse {
   answer: string;
+}
+
+// Auction Types
+export interface Bid {
+  id: string;
+  amount: number;
+  createdAt: string;
+  bidderId: string;
+  bidder?: {
+    id: string;
+    name: string;
+    avatar: string;
+  };
+  vehicleId?: string | null;
+  batteryId?: string | null;
+}
+
+export interface AuctionItem {
+  id: string;
+  title: string;
+  description: string;
+  price: number;
+  location?: string | null;
+  images: string[];
+  status: string;
+  brand: string;
+  specifications: VehicleSpecifications | BatterySpecifications;
+  isAuction: boolean;
+  auctionStartsAt: string | null;
+  auctionEndsAt: string | null;
+  startingPrice: number;
+  bidIncrement: number;
+  depositAmount: number;
+  buyNowPrice?: number | null;
+  isVerified: boolean;
+  auctionRejectionReason: string | null;
+  createdAt: string;
+  updatedAt: string;
+  sellerId: string;
+  seller?: Seller;
+  listingType: 'VEHICLE' | 'BATTERY';
+  // Vehicle specific
+  model?: string;
+  year?: number;
+  mileage?: number;
+  // Battery specific
+  capacity?: number;
+  health?: number;
+}
+
+export interface LiveAuctionsResponse {
+  message: string;
+  data: {
+    results: AuctionItem[];
+    page: number;
+    limit: number;
+    totalPages: number;
+    totalResults: number;
+  };
+}
+
+export interface AuctionDetailResponse {
+  message: string;
+  data: {
+    id: string;
+    title: string;
+    description: string;
+    price: number;
+    location?: string | null;
+    images: string[];
+    status: string;
+    brand: string;
+    specifications: VehicleSpecifications | BatterySpecifications;
+    isAuction: boolean;
+    auctionStartsAt: string | null;
+    auctionEndsAt: string | null;
+    startingPrice: number;
+    bidIncrement: number;
+    depositAmount: number;
+    buyNowPrice?: number | null;
+    isVerified: boolean;
+    auctionRejectionReason: string | null;
+    createdAt: string;
+    updatedAt: string;
+    sellerId: string;
+    seller: Seller;
+    bids: Bid[];
+    hasUserDeposit: boolean;
+    userAuctionResult?: 'WON' | 'LOST' | null;
+    // Vehicle specific
+    model?: string;
+    year?: number;
+    mileage?: number;
+    // Battery specific
+    capacity?: number;
+    health?: number;
+  };
+}
+
+export interface PlaceBidRequest {
+  amount: number;
+}
+
+export interface PlaceBidResponse {
+  message: string;
+  data: Bid;
+}
+
+export interface PayDepositResponse {
+  message: string;
+  data: {
+    id: string;
+    amount: number;
+    status: string;
+    userId: string;
+    vehicleId: string | null;
+    batteryId: string | null;
+    createdAt: string;
+    updatedAt: string;
+  };
+}
+
+export interface BuyNowResponse {
+  message: string;
+  data: {
+    transaction: Transaction;
+  };
+}
+
+export interface CreateAuctionVehicleRequest {
+  title: string;
+  description: string;
+  brand: string;
+  location: string;
+  model: string;
+  year: number;
+  mileage: number;
+  images: File[];
+  specifications: VehicleSpecifications;
+  startingPrice: number;
+  depositAmount: number;
+  bidIncrement: number;
+  buyNowPrice?: number;
+}
+
+export interface CreateAuctionBatteryRequest {
+  title: string;
+  description: string;
+  brand: string;
+  capacity: number;
+  year: number;
+  health: number;
+  images: File[];
+  specifications: BatterySpecifications;
+  startingPrice: number;
+  depositAmount: number;
+  bidIncrement: number;
+  buyNowPrice?: number;
 }
