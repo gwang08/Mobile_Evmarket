@@ -51,19 +51,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const login = async (email: string, password: string) => {
     try {
       setIsLoading(true);
-      const response = await fetch('https://evmarket-api-staging-backup.onrender.com/api/v1/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Login failed');
-      }
+      const response = await authService.login({ email, password });
 
       await AsyncStorage.setItem('accessToken', response.data.accessToken);
       await AsyncStorage.setItem('user', JSON.stringify(response.data.user));
@@ -79,19 +67,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const register = async (name: string, email: string, password: string) => {
     try {
       setIsLoading(true);
-      const response = await fetch('https://evmarket-api-staging-backup.onrender.com/api/v1/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ name, email, password }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Registration failed');
-      }
+      const response = await authService.register({ name, email, password });
 
       await AsyncStorage.setItem('accessToken', response.data.accessToken);
       await AsyncStorage.setItem('user', JSON.stringify(response.data.user));
@@ -107,15 +83,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const logout = async () => {
     try {
       setIsLoading(true);
-      const token = await AsyncStorage.getItem('accessToken');
       
-      if (token) {
-        await fetch('https://evmarket-api-staging-backup.onrender.com/api/v1/auth/logout', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        });
+      try {
+        await authService.logout();
+      } catch (error) {
+        // Ignore logout API errors, still clear local data
+        console.log('Logout API error (ignored):', error);
       }
 
       await AsyncStorage.removeItem('accessToken');
@@ -136,20 +109,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
         throw new Error('No refresh token available');
       }
 
-      const response = await fetch('https://evmarket-api-staging-backup.onrender.com/api/v1/auth/refresh-token', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Token refresh failed');
-      }
-
-      await AsyncStorage.setItem('accessToken', data.data.accessToken);
+      const response = await authService.refreshToken();
+      await AsyncStorage.setItem('accessToken', response.data.accessToken);
     } catch (error) {
       console.error('Token refresh error:', error);
       // If refresh fails, logout user
