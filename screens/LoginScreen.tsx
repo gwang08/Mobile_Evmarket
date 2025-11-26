@@ -63,29 +63,16 @@ export default function LoginScreen({ onSwitchToRegister }: LoginScreenProps) {
         const cleanCode = code?.replace(/#.*$/, '').trim();
         
         if (cleanCode) {
+          console.log('Exchanging code:', cleanCode);
           
-          // Step 2: Exchange code for token
-          const response = await fetch(
-            'https://evmarket-api-staging-backup.onrender.com/api/v1/auth/exchange-code',
-            {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ code: cleanCode }),
-            }
-          );
-
+          // Step 2: Exchange code for token using authService
+          const response = await authService.exchangeGoogleCode(cleanCode);
           
-          const data = await response.json();
-
-          if (!response.ok) {
-            throw new Error(data.message || 'Failed to exchange code for token');
-          }
+          console.log('Exchange code response:', response);
 
           // Save token and user data
-          await AsyncStorage.setItem('accessToken', data.data.accessToken);
-          await AsyncStorage.setItem('user', JSON.stringify(data.data.user));
+          await AsyncStorage.setItem('accessToken', response.data.accessToken);
+          await AsyncStorage.setItem('user', JSON.stringify(response.data.user));
           
           // Reload auth context to update user state
           await reloadAuthStatus();
