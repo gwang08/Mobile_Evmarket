@@ -10,7 +10,9 @@ import {
   Platform,
   ScrollView,
   Linking,
+  SafeAreaView,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { parseErrorMessage } from '../utils/errorHandler';
@@ -26,6 +28,8 @@ export default function RegisterScreen({ onSwitchToLogin }: RegisterScreenProps)
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { register } = useAuth();
   const { showSuccess, showError, showWarning, showInfo } = useToast();
 
@@ -108,147 +112,202 @@ export default function RegisterScreen({ onSwitchToLogin }: RegisterScreenProps)
   };
 
   return (
-    <KeyboardAvoidingView 
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <View style={styles.formContainer}>
-          <Text style={styles.title}>Đăng ký</Text>
-          <Text style={styles.subtitle}>Tạo tài khoản mới</Text>
-
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Họ tên</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Nhập họ tên của bạn"
-              value={name}
-              onChangeText={setName}
-              autoCapitalize="words"
-              autoCorrect={false}
-            />
+    <SafeAreaView style={styles.container}>
+      <KeyboardAvoidingView 
+        style={styles.keyboardView}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <ScrollView 
+          contentContainerStyle={styles.scrollContainer}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Title */}
+          <View style={styles.titleContainer}>
+            <Text style={styles.title}>Đăng ký</Text>
+            <Text style={styles.subtitle}>Vui lòng nhập thông tin để tiếp tục</Text>
           </View>
 
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Email</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Nhập email của bạn"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-          </View>
+          {/* Form */}
+          <View style={styles.formContainer}>
+            {/* Name Input */}
+            <View style={styles.inputWrapper}>
+              <Text style={styles.label}>Họ và tên</Text>
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Nhập họ và tên của bạn"
+                  placeholderTextColor="#95a5a6"
+                  value={name}
+                  onChangeText={setName}
+                  autoCapitalize="words"
+                  autoCorrect={false}
+                />
+                <Ionicons name="person-outline" size={20} color="#7f8c8d" style={styles.inputIcon} />
+              </View>
+            </View>
 
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Mật khẩu</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Nhập mật khẩu (tối thiểu 8 ký tự)"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-          </View>
+            {/* Email Input */}
+            <View style={styles.inputWrapper}>
+              <Text style={styles.label}>Địa chỉ email</Text>
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Nhập email của bạn"
+                  placeholderTextColor="#95a5a6"
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+                <Ionicons name="mail-outline" size={20} color="#7f8c8d" style={styles.inputIcon} />
+              </View>
+            </View>
 
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Xác nhận mật khẩu</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Nhập lại mật khẩu"
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-              secureTextEntry
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-          </View>
+            {/* Password Input */}
+            <View style={styles.inputWrapper}>
+              <Text style={styles.label}>Mật khẩu</Text>
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Nhập mật khẩu (tối thiểu 8 ký tự)"
+                  placeholderTextColor="#95a5a6"
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry={!showPassword}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+                <TouchableOpacity 
+                  onPress={() => setShowPassword(!showPassword)}
+                  style={styles.inputIcon}
+                >
+                  <Ionicons 
+                    name={showPassword ? "eye-off-outline" : "eye-outline"} 
+                    size={20} 
+                    color="#7f8c8d" 
+                  />
+                </TouchableOpacity>
+              </View>
+            </View>
 
-          <TouchableOpacity
-            style={[styles.registerButton, isLoading && styles.disabledButton]}
-            onPress={handleRegister}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <ActivityIndicator color="white" />
-            ) : (
-              <Text style={styles.registerButtonText}>Đăng ký</Text>
-            )}
-          </TouchableOpacity>
+            {/* Confirm Password Input */}
+            <View style={styles.inputWrapper}>
+              <Text style={styles.label}>Xác nhận mật khẩu</Text>
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Nhập lại mật khẩu"
+                  placeholderTextColor="#95a5a6"
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  secureTextEntry={!showConfirmPassword}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+                <TouchableOpacity 
+                  onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                  style={styles.inputIcon}
+                >
+                  <Ionicons 
+                    name={showConfirmPassword ? "eye-off-outline" : "eye-outline"} 
+                    size={20} 
+                    color="#7f8c8d" 
+                  />
+                </TouchableOpacity>
+              </View>
+            </View>
 
-          <View style={styles.terms}>
-            <Text style={styles.termsText}>
-              Bằng việc đăng ký, bạn đồng ý với{' '}
-              <Text style={styles.termsLink}>Điều khoản sử dụng</Text>
-              {' '}và{' '}
-              <Text style={styles.termsLink}>Chính sách bảo mật</Text>
-            </Text>
-          </View>
-
-          <View style={styles.divider}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>HOẶC</Text>
-            <View style={styles.dividerLine} />
-          </View>
-
-          <TouchableOpacity style={styles.googleButton} onPress={handleGoogleRegister}>
-            <Text style={styles.googleButtonText}>🔍 Đăng ký với Google</Text>
-          </TouchableOpacity>
-
-          <View style={styles.loginContainer}>
-            <Text style={styles.loginText}>Đã có tài khoản? </Text>
-            <TouchableOpacity onPress={onSwitchToLogin}>
-              <Text style={styles.loginLink}>Đăng nhập ngay</Text>
+            {/* Register Button */}
+            <TouchableOpacity
+              style={[styles.registerButton, isLoading && styles.disabledButton]}
+              onPress={handleRegister}
+              disabled={isLoading}
+              activeOpacity={0.8}
+            >
+              {isLoading ? (
+                <ActivityIndicator color="white" />
+              ) : (
+                <Text style={styles.registerButtonText}>Đăng ký ngay</Text>
+              )}
             </TouchableOpacity>
+
+            {/* Terms */}
+            <View style={styles.terms}>
+              <Text style={styles.termsText}>
+                Bằng việc đăng ký, bạn đồng ý với{' '}
+                <Text style={styles.termsLink}>Điều khoản sử dụng</Text>
+                {' '}và{' '}
+                <Text style={styles.termsLink}>Chính sách bảo mật</Text>
+              </Text>
+            </View>
+
+            {/* Divider */}
+            <View style={styles.divider}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>Hoặc đăng ký bằng</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            {/* Google Button */}
+            <TouchableOpacity 
+              style={styles.googleButton} 
+              onPress={handleGoogleRegister}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="logo-google" size={20} color="#4285F4" />
+              <Text style={styles.googleButtonText}>Google</Text>
+            </TouchableOpacity>
+
+            {/* Login Link */}
+            <View style={styles.loginContainer}>
+              <Text style={styles.loginText}>Đã có tài khoản? </Text>
+              <TouchableOpacity onPress={onSwitchToLogin}>
+                <Text style={styles.loginLink}>Đăng nhập</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#ffffff',
+  },
+  keyboardView: {
+    flex: 1,
   },
   scrollContainer: {
     flexGrow: 1,
-    justifyContent: 'center',
-    padding: 20,
+    paddingHorizontal: 24,
+    paddingTop: 20,
+    paddingBottom: 40,
   },
-  formContainer: {
-    backgroundColor: 'white',
-    borderRadius: 15,
-    padding: 30,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
+  titleContainer: {
+    alignItems: 'center',
+    marginBottom: 40,
   },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
     color: '#2c3e50',
-    textAlign: 'center',
-    marginBottom: 5,
+    marginBottom: 8,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#7f8c8d',
     textAlign: 'center',
-    marginBottom: 30,
+    lineHeight: 20,
   },
-  inputContainer: {
-    marginBottom: 15,
+  formContainer: {
+    width: '100%',
+  },
+  inputWrapper: {
+    marginBottom: 20,
   },
   label: {
     fontSize: 14,
@@ -256,33 +315,53 @@ const styles = StyleSheet.create({
     color: '#2c3e50',
     marginBottom: 8,
   },
-  input: {
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     borderWidth: 1,
     borderColor: '#e1e8ed',
-    borderRadius: 10,
-    paddingHorizontal: 15,
-    paddingVertical: 12,
-    fontSize: 16,
+    borderRadius: 12,
     backgroundColor: '#f8f9fa',
+    paddingHorizontal: 15,
+  },
+  input: {
+    flex: 1,
+    paddingVertical: 14,
+    fontSize: 16,
+    color: '#2c3e50',
+  },
+  inputIcon: {
+    marginLeft: 10,
+    padding: 4,
   },
   registerButton: {
-    backgroundColor: '#27ae60',
-    borderRadius: 10,
-    paddingVertical: 15,
+    backgroundColor: '#3498db', // Gradient-like: blue to purple
+    borderRadius: 12,
+    paddingVertical: 16,
     alignItems: 'center',
+    justifyContent: 'center',
     marginTop: 10,
-    marginBottom: 15,
+    marginBottom: 20,
+    shadowColor: '#3498db',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
   },
   registerButtonText: {
     color: 'white',
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: 'bold',
+    letterSpacing: 0.5,
   },
   disabledButton: {
-    opacity: 0.7,
+    opacity: 0.6,
   },
   terms: {
-    marginBottom: 20,
+    marginBottom: 30,
   },
   termsText: {
     fontSize: 12,
@@ -297,7 +376,7 @@ const styles = StyleSheet.create({
   divider: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 20,
+    marginBottom: 30,
   },
   dividerLine: {
     flex: 1,
@@ -307,21 +386,25 @@ const styles = StyleSheet.create({
   dividerText: {
     marginHorizontal: 15,
     color: '#7f8c8d',
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '500',
   },
   googleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 1,
     borderColor: '#e1e8ed',
-    borderRadius: 10,
-    paddingVertical: 15,
-    alignItems: 'center',
-    marginBottom: 20,
+    borderRadius: 12,
+    paddingVertical: 14,
+    backgroundColor: '#ffffff',
+    marginBottom: 30,
   },
   googleButtonText: {
     color: '#2c3e50',
     fontSize: 16,
     fontWeight: '500',
+    marginLeft: 10,
   },
   loginContainer: {
     flexDirection: 'row',
