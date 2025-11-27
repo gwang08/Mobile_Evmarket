@@ -33,6 +33,7 @@ export default function CartScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [processing, setProcessing] = useState(false);
+  const [removingItemId, setRemovingItemId] = useState<string | null>(null);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<"MOMO" | "WALLET" | null>(null);
 
   useEffect(() => {
@@ -86,12 +87,15 @@ export default function CartScreen() {
           style: "destructive",
           onPress: async () => {
             try {
+              setRemovingItemId(itemId);
               await cartService.removeFromCart(itemId);
               showSuccess("Đã xóa sản phẩm khỏi giỏ hàng");
               loadCart();
             } catch (error) {
               console.error("Error removing item:", error);
               showError("Không thể xóa sản phẩm. Vui lòng thử lại.");
+            } finally {
+              setRemovingItemId(null);
             }
           },
         },
@@ -300,10 +304,15 @@ export default function CartScreen() {
                       </View>
                     </TouchableOpacity>
                     <TouchableOpacity
-                      style={styles.removeButton}
+                      style={[styles.removeButton, removingItemId === item.id && styles.removeButtonDisabled]}
                       onPress={() => handleRemoveItem(item.id)}
+                      disabled={removingItemId === item.id}
                     >
-                      <Ionicons name="trash-outline" size={20} color="#e74c3c" />
+                      {removingItemId === item.id ? (
+                        <ActivityIndicator size="small" color="#e74c3c" />
+                      ) : (
+                        <Ionicons name="trash-outline" size={20} color="#e74c3c" />
+                      )}
                     </TouchableOpacity>
                   </View>
                 );
@@ -496,6 +505,13 @@ const styles = StyleSheet.create({
   },
   removeButton: {
     padding: 8,
+    justifyContent: "center",
+    alignItems: "center",
+    minWidth: 36,
+    minHeight: 36,
+  },
+  removeButtonDisabled: {
+    opacity: 0.6,
   },
   sellerTotal: {
     flexDirection: "row",

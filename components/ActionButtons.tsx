@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 
@@ -12,6 +12,7 @@ interface ActionButtonsProps {
   onAddToCartPress?: () => void;
   onViewCartPress?: () => void;
   onLoginRequired?: () => void; // Callback when login is required
+  addingToCart?: boolean; // Loading state for add to cart
 }
 
 export default function ActionButtons({ 
@@ -22,7 +23,8 @@ export default function ActionButtons({
   onNegotiatePress,
   onAddToCartPress, 
   onViewCartPress,
-  onLoginRequired
+  onLoginRequired,
+  addingToCart = false
 }: ActionButtonsProps) {
   const { isAuthenticated } = useAuth();
   const { showInfo } = useToast();
@@ -165,8 +167,16 @@ export default function ActionButtons({
       <View style={styles.buttonContainer}>
         {useCartButtons ? (
           <>
-            <TouchableOpacity style={styles.addToCartButton} onPress={handleAddToCartPress}>
-              <Text style={styles.addToCartButtonText}>Thêm vào giỏ hàng</Text>
+            <TouchableOpacity 
+              style={[styles.addToCartButton, addingToCart && styles.buttonDisabled]} 
+              onPress={handleAddToCartPress}
+              disabled={addingToCart}
+            >
+              {addingToCart ? (
+                <ActivityIndicator color="white" />
+              ) : (
+                <Text style={styles.addToCartButtonText}>Thêm vào giỏ hàng</Text>
+              )}
             </TouchableOpacity>
             
             <TouchableOpacity style={styles.viewCartButton} onPress={handleViewCartPress}>
@@ -261,5 +271,8 @@ const styles = StyleSheet.create({
     color: '#2c3e50',
     fontSize: 16,
     fontWeight: '600',
+  },
+  buttonDisabled: {
+    opacity: 0.6,
   },
 });
