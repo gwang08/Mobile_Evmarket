@@ -1,6 +1,6 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { StatusBar } from "expo-status-bar";
-import { NavigationContainer } from "@react-navigation/native";
+import { NavigationContainer, NavigationContainerRef } from "@react-navigation/native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { Linking } from "react-native";
 
@@ -10,6 +10,7 @@ import { ToastProvider, useToast } from "./contexts/ToastContext";
 
 function AppContent() {
   const { showSuccess, showError, showWarning } = useToast();
+  const navigationRef = useRef<NavigationContainerRef<any>>(null);
 
   useEffect(() => {
     // Handle deep link when app is already running
@@ -52,17 +53,22 @@ function AppContent() {
         const transactionId = urlObj.searchParams.get("orderId"); // MoMo gửi orderId
 
         if (resultCode === "0") {
-          // Deposit payment successful - navigate to Appointments tab
+          // Payment successful - navigate to TransactionHistory
           showSuccess(
-            "Đặt cọc 10% thành công! Vui lòng xem lịch hẹn và sắp xếp với người bán.",
-            5000
+            "Thanh toán thành công! Đang chuyển đến lịch sử đơn hàng...",
+            2000
           );
+          
+          // Navigate to TransactionHistory after 1.5 seconds
+          setTimeout(() => {
+            navigationRef.current?.navigate("TransactionHistory");
+          }, 1500);
         } else if (resultCode === "1006") {
           // User cancelled
-          showWarning("Bạn đã hủy đặt cọc.");
+          showWarning("Bạn đã hủy thanh toán.");
         } else {
           // Payment failed
-          showError(message || "Đặt cọc thất bại. Vui lòng thử lại.");
+          showError(message || "Thanh toán thất bại. Vui lòng thử lại.");
         }
       }
 
@@ -109,7 +115,7 @@ function AppContent() {
   }, []);
 
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={navigationRef}>
       <RootNavigator />
       <StatusBar style="auto" />
     </NavigationContainer>

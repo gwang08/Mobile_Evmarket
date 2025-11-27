@@ -74,5 +74,13 @@ export const cartService = {
     const response = await apiClient.delete<{ message: string }>('/cart');
     return response.data;
   },
+
+  async checkoutCart(paymentMethod: 'MOMO' | 'WALLET', redirectUrl?: string): Promise<any> {
+    const response = await apiClient.post('/checkout', {
+      paymentMethod,
+      ...(redirectUrl && { redirectUrl }),
+    });
+    return response.data;
+  },
 };
 

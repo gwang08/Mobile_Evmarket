@@ -254,8 +254,8 @@ export default function TransactionHistoryScreen() {
             />
             <Text style={styles.paymentMethod}>
               {item.paymentGateway === "MOMO" 
-                ? "MoMo" 
-                : item.paymentGateway === "INTERNAL"
+                ? "MOMO" 
+                : item.paymentGateway === "INTERNAL" || item.paymentGateway === "WALLET"
                 ? "Ví EVmarket"
                 : item.paymentGateway}
             </Text>
