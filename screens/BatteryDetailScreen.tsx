@@ -24,8 +24,10 @@ import { TabParamList } from "../navigation/TabNavigator";
 import { Battery, Transaction } from "../types";
 import { batteryService } from "../services/batteryService";
 import { transactionService } from "../services/transactionService";
+import { cartService } from "../services/cartService";
 import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "../contexts/ToastContext";
+import { parseErrorMessage } from "../utils/errorHandler";
 import ImageGallery from "../components/ImageGallery";
 import BatterySpecifications from "../components/BatterySpecifications";
 import SellerInfo from "../components/SellerInfo";
@@ -46,7 +48,7 @@ export default function BatteryDetailScreen() {
   const [depositPaidTransaction, setDepositPaidTransaction] =
     useState<Transaction | null>(null);
   const { isAuthenticated, setShowLoginPrompt } = useAuth();
-  const { showError, showInfo } = useToast();
+  const { showError, showInfo, showSuccess } = useToast();
 
   useEffect(() => {
     fetchBatteryDetail();
@@ -110,11 +112,11 @@ export default function BatteryDetailScreen() {
     }
   };
 
-  const handleBuyPress = () => {
+  const handleAddToCartPress = async () => {
     if (!isAuthenticated) {
       Alert.alert(
         "Yêu cầu đăng nhập",
-        "Bạn cần đăng nhập để mua sản phẩm này. Vui lòng đăng nhập để tiếp tục.",
+        "Bạn cần đăng nhập để thêm sản phẩm vào giỏ hàng. Vui lòng đăng nhập để tiếp tục.",
         [
           { text: "Hủy", style: "cancel" },
           {
@@ -130,23 +132,36 @@ export default function BatteryDetailScreen() {
       return;
     }
 
-    navigation.navigate("Checkout", {
-      productId: batteryId,
-      productType: "battery",
-    });
+    if (!battery) {
+      showError("Không tìm thấy thông tin sản phẩm");
+      return;
+    }
+
+    try {
+      await cartService.addToCart({
+        batteryId: batteryId,
+      });
+      showSuccess("Đã thêm vào giỏ hàng");
+    } catch (error: any) {
+      console.error("Error adding to cart:", error);
+      console.error("Error response data:", error.response?.data);
+      console.error("Error response status:", error.response?.status);
+      
+      const errorMessage = parseErrorMessage(error);
+      showError(errorMessage);
+    }
   };
 
-  const handleNegotiatePress = () => {
+  const handleViewCartPress = () => {
     if (!isAuthenticated) {
       Alert.alert(
         "Yêu cầu đăng nhập",
-        "Bạn cần đăng nhập để thương lượng với người bán. Vui lòng đăng nhập để tiếp tục.",
+        "Bạn cần đăng nhập để xem giỏ hàng. Vui lòng đăng nhập để tiếp tục.",
         [
           { text: "Hủy", style: "cancel" },
           {
             text: "Đăng nhập",
             onPress: () => {
-              // Navigate to Profile tab and show login
               navigation.navigate("Main", { screen: "Profile" });
               setShowLoginPrompt(true);
             },
@@ -156,8 +171,9 @@ export default function BatteryDetailScreen() {
       return;
     }
 
-    showInfo(`Gửi tin nhắn thương lượng cho ${battery?.seller?.name}`);
+    navigation.navigate("Cart");
   };
+
 
   const getHealthColor = (health: number | null) => {
     if (!health) return "#95a5a6";
@@ -274,8 +290,8 @@ export default function BatteryDetailScreen() {
           price={battery.price}
           productId={batteryId}
           productType="battery"
-          onBuyPress={handleBuyPress}
-          onNegotiatePress={handleNegotiatePress}
+          onAddToCartPress={handleAddToCartPress}
+          onViewCartPress={handleViewCartPress}
           onLoginRequired={handleLoginRequired}
         />
       )}

@@ -104,6 +104,14 @@ export const parseErrorMessage = (error: any): string => {
     return 'Bạn không có quyền thực hiện thao tác này.';
   }
   
+  // Lỗi 400
+  if (error.response?.status === 400) {
+    if (error.response?.data?.message) {
+      return error.response.data.message;
+    }
+    return 'Dữ liệu không hợp lệ. Vui lòng kiểm tra lại và thử lại.';
+  }
+  
   // Lỗi mặc định
   return 'Có lỗi xảy ra. Vui lòng thử lại sau.';
 };

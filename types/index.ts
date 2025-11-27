@@ -520,3 +520,52 @@ export interface CreateAuctionBatteryRequest {
   bidIncrement: number;
   buyNowPrice?: number;
 }
+
+// Cart Types
+export interface CartItem {
+  id: string;
+  listingId: string;
+  listingType: 'VEHICLE' | 'BATTERY';
+  price: number;
+  createdAt: string;
+  updatedAt: string;
+  battery?: {
+    id: string;
+    title: string;
+    images: string[];
+    price: number;
+    brand: string;
+    capacity: number;
+    year: number;
+    health: number | null;
+    seller?: {
+      id: string;
+      name: string;
+      avatar: string;
+    };
+  };
+  vehicle?: {
+    id: string;
+    title: string;
+    images: string[];
+    price: number;
+    brand: string;
+    model: string;
+    year: number;
+    mileage: number;
+    seller?: {
+      id: string;
+      name: string;
+      avatar: string;
+    };
+  };
+}
+
+export interface CartResponse {
+  message: string;
+  data: {
+    items: CartItem[];
+    totalPrice: number;
+    totalItems: number;
+  };
+}

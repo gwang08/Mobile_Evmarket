@@ -17,6 +17,7 @@ import AppointmentListScreen from "../screens/AppointmentListScreen";
 import AppointmentDetailScreen from "../screens/AppointmentDetailScreen";
 import InspectionScreen from "../screens/InspectionScreen";
 import FinalPaymentScreen from "../screens/FinalPaymentScreen";
+import CartScreen from "../screens/CartScreen";
 
 export type RootStackParamList = {
   Main: { screen?: keyof TabParamList } | undefined;
@@ -24,6 +25,7 @@ export type RootStackParamList = {
   BatteryDetail: { batteryId: string };
   SellerDetail: { sellerId: string };
   Checkout: { productId: string; productType: "vehicle" | "battery" };
+  Cart: undefined;
   CreateVehicle: undefined;
   CreateBattery: undefined;
   MyListings: undefined;
@@ -117,6 +119,13 @@ export default function RootNavigator() {
         component={CheckoutScreen}
         options={{
           title: "Đặt cọc 10%",
+        }}
+      />
+      <Stack.Screen
+        name="Cart"
+        component={CartScreen}
+        options={{
+          title: "Giỏ hàng",
         }}
       />
       <Stack.Screen

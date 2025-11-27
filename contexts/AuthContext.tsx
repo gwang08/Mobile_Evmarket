@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { AppState, AppStateStatus } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { User } from '../types';
 import { authService } from '../services/authService';
@@ -31,6 +32,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   useEffect(() => {
     checkAuthStatus();
+    
+    // Listen to app state changes to check auth status when app comes to foreground
+    const subscription = AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
+      if (nextAppState === 'active') {
+        // When app comes to foreground, check if token still exists
+        // This helps sync with token clearing in API interceptor
+        checkAuthStatus();
+      }
+    });
+    
+    return () => {
+      subscription?.remove();
+    };
   }, []);
 
   const checkAuthStatus = async () => {
@@ -40,9 +54,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
       
       if (token && userData) {
         setUser(JSON.parse(userData));
+        // Token exists, but we don't validate expiration here
+        // Expiration will be handled by API interceptor when making requests
+      } else {
+        // No token or user data, clear state
+        setUser(null);
       }
     } catch (error) {
       console.error('Error checking auth status:', error);
+      setUser(null);
     } finally {
       setIsLoading(false);
     }
