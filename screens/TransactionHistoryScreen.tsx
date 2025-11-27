@@ -16,12 +16,15 @@ import { Transaction } from "../types";
 import { transactionService } from "../services/transactionService";
 import { Ionicons } from "@expo/vector-icons";
 import { useToast } from "../contexts/ToastContext";
+import { useAuth } from "../contexts/AuthContext";
+import { AxiosError } from "axios";
 
 type TransactionHistoryNavigationProp = StackNavigationProp<RootStackParamList>;
 
 export default function TransactionHistoryScreen() {
   const navigation = useNavigation<TransactionHistoryNavigationProp>();
   const { showError } = useToast();
+  const { isAuthenticated } = useAuth();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -29,33 +32,46 @@ export default function TransactionHistoryScreen() {
   const [hasMore, setHasMore] = useState(true);
 
   useEffect(() => {
-    loadTransactions();
-  }, []);
+    if (isAuthenticated) {
+      loadTransactions();
+    } else {
+      setLoading(false);
+    }
+  }, [isAuthenticated]);
 
   useFocusEffect(
     React.useCallback(() => {
-      loadTransactions();
-    }, [])
+      if (isAuthenticated) {
+        loadTransactions();
+      }
+    }, [isAuthenticated])
   );
 
   const loadTransactions = async () => {
+    if (!isAuthenticated) {
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       const response = await transactionService.getMyTransactions(1, 20);
-
-      // Show both COMPLETED and DEPOSIT_PAID transactions
-      const relevantTransactions = response.data.transactions.filter(
-        (transaction) =>
-          transaction.status === "COMPLETED" ||
-          transaction.status === "DEPOSIT_PAID"
-      );
-
-      setTransactions(relevantTransactions);
+      setTransactions(response.data.transactions);
       setHasMore(response.data.page < response.data.totalPages);
       setPage(1);
     } catch (error) {
       console.error("Error loading transactions:", error);
-      showError("Không thể tải lịch sử giao dịch");
+      
+      // Handle 401 error specifically
+      if (error instanceof AxiosError && error.response?.status === 401) {
+        showError("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+        // Navigation will be handled by AuthContext
+        setTimeout(() => {
+          navigation.navigate("Main", { screen: "Profile" });
+        }, 2000);
+      } else {
+        showError("Không thể tải lịch sử đơn hàng. Vui lòng thử lại.");
+      }
     } finally {
       setLoading(false);
     }
@@ -87,10 +103,18 @@ export default function TransactionHistoryScreen() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
+      case "PAID":
+        return "#27ae60";
       case "COMPLETED":
         return "#27ae60";
       case "DEPOSIT_PAID":
         return "#f39c12";
+      case "PENDING":
+        return "#3498db";
+      case "FAILED":
+        return "#e74c3c";
+      case "CANCELLED":
+        return "#95a5a6";
       default:
         return "#95a5a6";
     }
@@ -98,13 +122,56 @@ export default function TransactionHistoryScreen() {
 
   const getStatusText = (status: string) => {
     switch (status) {
+      case "PAID":
+        return "Đã thanh toán";
       case "COMPLETED":
         return "Hoàn thành";
       case "DEPOSIT_PAID":
         return "Đã đặt cọc";
+      case "PENDING":
+        return "Đang xử lý";
+      case "FAILED":
+        return "Thất bại";
+      case "CANCELLED":
+        return "Đã hủy";
       default:
         return status;
     }
+  };
+
+  const getProductInfo = (transaction: Transaction) => {
+    // Nếu có vehicle
+    if (transaction.vehicle) {
+      return {
+        title: transaction.vehicle.title,
+        images: transaction.vehicle.images,
+        type: "VEHICLE",
+        id: transaction.vehicleId,
+      };
+    }
+    
+    // Nếu có battery (single)
+    if (transaction.battery) {
+      return {
+        title: transaction.battery.title,
+        images: transaction.battery.images,
+        type: "BATTERY",
+        id: transaction.batteryId,
+      };
+    }
+    
+    // Nếu có batteries (array) - lấy item đầu tiên
+    if (transaction.batteries && transaction.batteries.length > 0) {
+      const battery = transaction.batteries[0];
+      return {
+        title: battery.title,
+        images: battery.images,
+        type: "BATTERY",
+        id: null,
+      };
+    }
+    
+    return null;
   };
 
   const handleTransactionPress = (transaction: Transaction) => {
@@ -114,21 +181,25 @@ export default function TransactionHistoryScreen() {
       return;
     }
 
-    // Otherwise navigate to product detail
-    if (transaction.vehicle) {
+    const productInfo = getProductInfo(transaction);
+    if (!productInfo) return;
+
+    if (productInfo.type === "VEHICLE" && productInfo.id) {
       navigation.navigate("VehicleDetail", {
-        vehicleId: transaction.vehicle.id,
+        vehicleId: productInfo.id,
       });
-    } else if (transaction.battery) {
+    } else if (productInfo.type === "BATTERY" && productInfo.id) {
       navigation.navigate("BatteryDetail", {
-        batteryId: transaction.battery.id,
+        batteryId: productInfo.id,
       });
     }
   };
 
   const renderTransaction = ({ item }: { item: Transaction }) => {
-    const product = item.vehicle || item.battery;
-    if (!product) return null;
+    const productInfo = getProductInfo(item);
+    if (!productInfo) return null;
+
+    const isMultipleBatteries = item.batteries && item.batteries.length > 0;
 
     return (
       <TouchableOpacity
@@ -136,13 +207,16 @@ export default function TransactionHistoryScreen() {
         onPress={() => handleTransactionPress(item)}
       >
         <Image
-          source={{ uri: product.images[0] }}
+          source={{ uri: productInfo.images[0] || "https://via.placeholder.com/80" }}
           style={styles.productImage}
           resizeMode="cover"
         />
         <View style={styles.transactionInfo}>
           <Text style={styles.productTitle} numberOfLines={2}>
-            {product.title}
+            {productInfo.title}
+            {isMultipleBatteries && item.batteries && item.batteries.length > 1 && (
+              <Text style={styles.multipleText}> (+{item.batteries.length - 1} sản phẩm khác)</Text>
+            )}
           </Text>
           <Text style={styles.transactionDate}>
             {formatDate(item.createdAt)}
@@ -169,13 +243,21 @@ export default function TransactionHistoryScreen() {
           <View style={styles.paymentRow}>
             <Ionicons
               name={
-                item.paymentGateway === "MOMO" ? "phone-portrait" : "wallet"
+                item.paymentGateway === "MOMO" 
+                  ? "phone-portrait" 
+                  : item.paymentGateway === "INTERNAL"
+                  ? "wallet"
+                  : "card"
               }
               size={14}
               color="#7f8c8d"
             />
             <Text style={styles.paymentMethod}>
-              {item.paymentGateway === "MOMO" ? "MoMo" : "Ví EVmarket"}
+              {item.paymentGateway === "MOMO" 
+                ? "MoMo" 
+                : item.paymentGateway === "INTERNAL"
+                ? "Ví EVmarket"
+                : item.paymentGateway}
             </Text>
           </View>
         </View>
@@ -183,6 +265,24 @@ export default function TransactionHistoryScreen() {
       </TouchableOpacity>
     );
   };
+
+  if (!isAuthenticated) {
+    return (
+      <View style={styles.emptyContainer}>
+        <Ionicons name="lock-closed-outline" size={80} color="#bdc3c7" />
+        <Text style={styles.emptyTitle}>Vui lòng đăng nhập</Text>
+        <Text style={styles.emptyText}>
+          Bạn cần đăng nhập để xem lịch sử đơn hàng
+        </Text>
+        <TouchableOpacity
+          style={styles.shopButton}
+          onPress={() => navigation.navigate("Main", { screen: "Profile" })}
+        >
+          <Text style={styles.shopButtonText}>Đăng nhập</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   if (loading && transactions.length === 0) {
     return (
@@ -197,7 +297,7 @@ export default function TransactionHistoryScreen() {
     return (
       <View style={styles.emptyContainer}>
         <Ionicons name="receipt-outline" size={80} color="#bdc3c7" />
-        <Text style={styles.emptyTitle}>Chưa có giao dịch nào</Text>
+        <Text style={styles.emptyTitle}>Chưa có đơn hàng nào</Text>
         <Text style={styles.emptyText}>
           Lịch sử mua hàng của bạn sẽ được hiển thị tại đây
         </Text>
@@ -301,6 +401,7 @@ const styles = StyleSheet.create({
     height: 80,
     borderRadius: 8,
     marginRight: 12,
+    backgroundColor: "#ecf0f1",
   },
   transactionInfo: {
     flex: 1,
@@ -310,6 +411,11 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#2c3e50",
     marginBottom: 5,
+  },
+  multipleText: {
+    fontSize: 13,
+    fontWeight: "400",
+    color: "#7f8c8d",
   },
   transactionDate: {
     fontSize: 12,

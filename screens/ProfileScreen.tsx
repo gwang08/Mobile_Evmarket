@@ -82,7 +82,12 @@ export default function ProfileScreen() {
       icon: "storefront-outline",
       action: () => navigation.navigate("MyListings"),
     },
-    { id: 3, title: "Lịch sử đơn hàng", icon: "receipt-outline" },
+    {
+      id: 3,
+      title: "Lịch sử đơn hàng",
+      icon: "receipt-outline",
+      action: () => navigation.navigate("TransactionHistory"),
+    },
     { id: 4, title: "Yêu thích", icon: "heart-outline" },
     { id: 5, title: "Cài đặt thanh toán", icon: "card-outline" },
     { id: 6, title: "Hỗ trợ khách hàng", icon: "headset-outline" },
