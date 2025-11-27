@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Alert,
   RefreshControl,
+  AppState,
 } from "react-native";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
@@ -21,19 +22,22 @@ import { Ionicons } from "@expo/vector-icons";
 import { parseErrorMessage } from "../utils/errorHandler";
 import PaymentMethod from "../components/PaymentMethod";
 import { Linking } from "react-native";
+import { transactionService } from "../services/transactionService";
 
 type CartScreenNavigationProp = StackNavigationProp<RootStackParamList>;
 
 export default function CartScreen() {
   const navigation = useNavigation<CartScreenNavigationProp>();
   const { isAuthenticated } = useAuth();
-  const { showSuccess, showError, showWarning } = useToast();
+  const { showSuccess, showError, showWarning, showInfo } = useToast();
   
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [processing, setProcessing] = useState(false);
+  const [removingItemId, setRemovingItemId] = useState<string | null>(null);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<"MOMO" | "WALLET" | null>(null);
+  const paymentInitiatedRef = useRef(false);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -47,9 +51,49 @@ export default function CartScreen() {
     React.useCallback(() => {
       if (isAuthenticated) {
         loadCart();
+        
+        // Check if payment was just completed (when returning from MoMo)
+        if (paymentInitiatedRef.current) {
+          paymentInitiatedRef.current = false;
+          // Delay to allow backend to process payment
+          setTimeout(() => {
+            checkPaymentStatus();
+          }, 2000);
+        }
       }
     }, [isAuthenticated])
   );
+
+  // Listen to app state changes to detect when returning from MoMo
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextAppState) => {
+      if (nextAppState === 'active' && paymentInitiatedRef.current) {
+        // App became active after payment - check status
+        setTimeout(() => {
+          checkPaymentStatus();
+        }, 2000);
+      }
+    });
+
+    return () => {
+      subscription?.remove();
+    };
+  }, []);
+
+  const checkPaymentStatus = async () => {
+    try {
+      const response = await transactionService.getMyTransactions(1, 5);
+      const recentTransaction = response.data.transactions[0];
+      
+      // If there's a recent PENDING transaction that might have been paid
+      // Navigate to transaction history to show updated status
+      if (recentTransaction && recentTransaction.paymentGateway === "MOMO") {
+        navigation.navigate("TransactionHistory");
+      }
+    } catch (error) {
+      console.error("Error checking payment status:", error);
+    }
+  };
 
   const loadCart = async () => {
     if (!isAuthenticated) {
@@ -86,12 +130,15 @@ export default function CartScreen() {
           style: "destructive",
           onPress: async () => {
             try {
+              setRemovingItemId(itemId);
               await cartService.removeFromCart(itemId);
               showSuccess("Đã xóa sản phẩm khỏi giỏ hàng");
               loadCart();
             } catch (error) {
               console.error("Error removing item:", error);
               showError("Không thể xóa sản phẩm. Vui lòng thử lại.");
+            } finally {
+              setRemovingItemId(null);
             }
           },
         },
@@ -126,34 +173,53 @@ export default function CartScreen() {
     try {
       setProcessing(true);
 
-      // Checkout từng item trong cart
-      // Lưu ý: API có thể hỗ trợ checkout nhiều items cùng lúc, nhưng hiện tại checkout từng item
-      const checkoutPromises = cartItems.map((item) =>
-        checkoutService.initiateCheckout({
-          listingId: item.listingId,
-          listingType: item.listingType,
-          paymentMethod: selectedPaymentMethod,
-          depositOnly: true, // Pay 10% deposit only
-          ...(selectedPaymentMethod === "MOMO" && {
-            redirectUrl: "evmarket://checkout-callback",
-          }),
-        })
+      // Checkout toàn bộ cart - API sẽ tự động lấy items từ cart
+      const response = await cartService.checkoutCart(
+        selectedPaymentMethod,
+        selectedPaymentMethod === "MOMO" ? "evmarket://checkout-callback" : undefined
       );
 
-      const results = await Promise.all(checkoutPromises);
+      console.log("Cart checkout response:", JSON.stringify(response, null, 2));
+      console.log("Response data:", response?.data);
+      console.log("Payment info:", response?.data?.paymentInfo);
 
       // Handle MoMo payment if selected
-      if (selectedPaymentMethod === "MOMO" && results[0]?.data?.paymentInfo) {
-        const paymentInfo = results[0].data.paymentInfo;
-        const supported = await Linking.canOpenURL(paymentInfo.deeplink);
+      if (selectedPaymentMethod === "MOMO") {
+        // API returns paymentUrl directly in data
+        const paymentUrl = response?.data?.paymentUrl;
         
-        if (supported) {
-          await Linking.openURL(paymentInfo.deeplink);
+        if (!paymentUrl) {
+          console.error("❌ No paymentUrl found in response");
+          console.error("Full response:", response);
+          showError("Không nhận được thông tin thanh toán từ server. Vui lòng thử lại.");
+          setProcessing(false);
+          return;
+        }
+
+        console.log("Payment URL found:", paymentUrl);
+
+        // Open MoMo payment URL
+        try {
+          paymentInitiatedRef.current = true;
+          await Linking.openURL(paymentUrl);
+          console.log("✅ Opened MoMo payment URL");
           showInfo("Đang chuyển đến MoMo để thanh toán...");
-        } else {
-          // Fallback to payUrl
-          await Linking.openURL(paymentInfo.payUrl);
-          showInfo("Đang chuyển đến MoMo để thanh toán...");
+          
+          // Show instruction - MoMo will redirect back to app after payment
+          showInfo(
+            "Vui lòng hoàn tất thanh toán trên MoMo. App sẽ tự động cập nhật khi thanh toán thành công.",
+            5000
+          );
+          
+          // Navigate to TransactionHistory after payment (similar to CheckoutScreen)
+          setTimeout(() => {
+            navigation.navigate("TransactionHistory");
+          }, 2000);
+        } catch (error) {
+          console.error("❌ Failed to open payment URL:", error);
+          showError("Không thể mở trang thanh toán MoMo. Vui lòng thử lại.");
+          setProcessing(false);
+          return;
         }
       } else {
         // Wallet payment
@@ -173,8 +239,11 @@ export default function CartScreen() {
           navigation.navigate("TransactionHistory");
         }, 2000);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Checkout error:", error);
+      console.error("Checkout error response:", error.response?.data);
+      console.error("Checkout error status:", error.response?.status);
+      console.error("Checkout error URL:", error.config?.url);
       const errorMessage = parseErrorMessage(error);
       showError(errorMessage);
     } finally {
@@ -300,10 +369,15 @@ export default function CartScreen() {
                       </View>
                     </TouchableOpacity>
                     <TouchableOpacity
-                      style={styles.removeButton}
+                      style={[styles.removeButton, removingItemId === item.id && styles.removeButtonDisabled]}
                       onPress={() => handleRemoveItem(item.id)}
+                      disabled={removingItemId === item.id}
                     >
-                      <Ionicons name="trash-outline" size={20} color="#e74c3c" />
+                      {removingItemId === item.id ? (
+                        <ActivityIndicator size="small" color="#e74c3c" />
+                      ) : (
+                        <Ionicons name="trash-outline" size={20} color="#e74c3c" />
+                      )}
                     </TouchableOpacity>
                   </View>
                 );
@@ -496,6 +570,13 @@ const styles = StyleSheet.create({
   },
   removeButton: {
     padding: 8,
+    justifyContent: "center",
+    alignItems: "center",
+    minWidth: 36,
+    minHeight: 36,
+  },
+  removeButtonDisabled: {
+    opacity: 0.6,
   },
   sellerTotal: {
     flexDirection: "row",

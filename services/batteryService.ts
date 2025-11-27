@@ -106,19 +106,9 @@ export const batteryService = {
 
   getMyBatteries: async (userId: string): Promise<BatteriesResponse> => {
     try {
-      // Get all batteries and filter by sellerId
-      const response = await apiClient.get<BatteriesResponse>('/batteries/');
-      const allBatteries = response.data;
-      
-      // Filter batteries by sellerId
-      const myBatteries = allBatteries.data.batteries.filter(battery => battery.sellerId === userId);
-      
-      return {
-        message: allBatteries.message,
-        data: {
-          batteries: myBatteries
-        }
-      };
+      // Sử dụng endpoint /users/me/batteries để lấy batteries của user hiện tại
+      const response = await apiClient.get<BatteriesResponse>('/users/me/batteries');
+      return response.data;
     } catch (error) {
       console.error('Error fetching my batteries:', error);
       throw error;

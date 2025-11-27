@@ -125,62 +125,51 @@ export default function CheckoutScreen() {
 
       console.log("Checkout response:", JSON.stringify(response, null, 2));
 
-      if (selectedPaymentMethod === "MOMO" && response.data.paymentInfo) {
-        // Open MoMo app using deeplink
-        const { deeplink, payUrl, qrCodeUrl, deeplinkMiniApp } =
-          response.data.paymentInfo;
+      if (selectedPaymentMethod === "MOMO") {
+        const paymentUrl = response?.data?.paymentUrl;
+        const paymentInfo = response?.data?.paymentInfo;
 
-        // Try to open MoMo app (don't check canOpenURL, just try)
-        let opened = false;
-
-        // 1. Try app deeplink first
-        if (deeplink) {
+        if (paymentUrl) {
+          console.log("Payment URL found:", paymentUrl);
           try {
-            await Linking.openURL(deeplink);
-            opened = true;
-            console.log("✅ Opened MoMo app via deeplink");
-          } catch (error) {
-            console.warn("❌ Failed to open deeplink:", error);
-          }
-        }
-
-        // 2. Fallback to QR code deeplink
-        if (!opened && qrCodeUrl) {
-          try {
-            await Linking.openURL(qrCodeUrl);
-            opened = true;
-            console.log("✅ Opened MoMo app via QR deeplink");
-          } catch (error) {
-            console.warn("❌ Failed to open QR deeplink:", error);
-          }
-        }
-
-        // 3. Fallback to MiniApp deeplink
-        if (!opened && deeplinkMiniApp) {
-          try {
-            await Linking.openURL(deeplinkMiniApp);
-            opened = true;
-            console.log("✅ Opened MoMo app via miniapp deeplink");
-          } catch (error) {
-            console.warn("❌ Failed to open miniapp deeplink:", error);
-          }
-        }
-
-        // 4. Last resort: open web payment page
-        if (!opened && payUrl) {
-          try {
-            await Linking.openURL(payUrl);
-            console.log("✅ Opened MoMo web payment page");
+            await Linking.openURL(paymentUrl);
+            console.log("✅ Opened MoMo payment URL");
           } catch (error) {
             console.error("❌ Failed to open payment URL:", error);
             showError("Không thể mở trang thanh toán. Vui lòng thử lại.");
             return;
           }
-        }
+        } else if (paymentInfo) {
+          const { deeplink, payUrl, qrCodeUrl, deeplinkMiniApp } = paymentInfo;
+          let opened = false;
 
-        if (!opened) {
+          const tryOpen = async (url?: string, label?: string) => {
+            if (!url || opened) return;
+            try {
+              await Linking.openURL(url);
+              opened = true;
+              console.log(`✅ Opened MoMo ${label || "URL"}`);
+            } catch (error) {
+              console.warn(`❌ Failed to open ${label || "URL"}:`, error);
+            }
+          };
+
+          await tryOpen(deeplink, "deeplink");
+          await tryOpen(qrCodeUrl, "QR deeplink");
+          await tryOpen(deeplinkMiniApp, "miniapp deeplink");
+          await tryOpen(payUrl, "web payment page");
+
+          if (!opened) {
+            showError(
+              "Không thể mở ứng dụng MoMo. Vui lòng kiểm tra và thử lại."
+            );
+            return;
+          }
+        } else {
+          console.error("❌ No paymentUrl or paymentInfo found in response");
+          console.error("Full response:", response);
           showError(
-            "Không thể mở ứng dụng MoMo. Vui lòng kiểm tra và thử lại."
+            "Không nhận được thông tin thanh toán từ server. Vui lòng thử lại."
           );
           return;
         }

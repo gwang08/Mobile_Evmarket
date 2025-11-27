@@ -45,6 +45,7 @@ export default function BatteryDetailScreen() {
   const { batteryId } = route.params;
   const [battery, setBattery] = useState<Battery | null>(null);
   const [loading, setLoading] = useState(true);
+  const [addingToCart, setAddingToCart] = useState(false);
   const [depositPaidTransaction, setDepositPaidTransaction] =
     useState<Transaction | null>(null);
   const { isAuthenticated, setShowLoginPrompt } = useAuth();
@@ -138,6 +139,7 @@ export default function BatteryDetailScreen() {
     }
 
     try {
+      setAddingToCart(true);
       await cartService.addToCart({
         batteryId: batteryId,
       });
@@ -149,6 +151,8 @@ export default function BatteryDetailScreen() {
       
       const errorMessage = parseErrorMessage(error);
       showError(errorMessage);
+    } finally {
+      setAddingToCart(false);
     }
   };
 
@@ -232,7 +236,7 @@ export default function BatteryDetailScreen() {
                       { color: getHealthColor(battery.health) },
                     ]}
                   >
-                    {battery.health}% sức khỏe
+                    {battery.health}%
                   </Text>
                 </View>
               )}
@@ -293,6 +297,7 @@ export default function BatteryDetailScreen() {
           onAddToCartPress={handleAddToCartPress}
           onViewCartPress={handleViewCartPress}
           onLoginRequired={handleLoginRequired}
+          addingToCart={addingToCart}
         />
       )}
 
