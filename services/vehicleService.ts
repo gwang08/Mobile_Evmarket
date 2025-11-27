@@ -157,19 +157,9 @@ export const vehicleService = {
 
   getMyVehicles: async (userId: string): Promise<VehiclesResponse> => {
     try {
-      // Get all vehicles and filter by sellerId
-      const response = await apiClient.get<VehiclesResponse>('/vehicles/');
-      const allVehicles = response.data;
-      
-      // Filter vehicles by sellerId
-      const myVehicles = allVehicles.data.vehicles.filter(vehicle => vehicle.sellerId === userId);
-      
-      return {
-        message: allVehicles.message,
-        data: {
-          vehicles: myVehicles
-        }
-      };
+      // Sử dụng endpoint /users/me/vehicles để lấy vehicles của user hiện tại
+      const response = await apiClient.get<VehiclesResponse>('/users/me/vehicles');
+      return response.data;
     } catch (error) {
       console.error('Error fetching my vehicles:', error);
       throw error;
